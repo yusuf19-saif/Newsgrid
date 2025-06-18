@@ -1,0 +1,275 @@
+/* my-app/globals.css */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Open+Sans:wght@400;600&display=swap');
+
+:root {
+  /* CHOSEN Light Theme Variables */
+  --background-primary: #ffffff;    /* Main page background */
+  --background-secondary: #f8f9fa;  /* For cards, form containers, header */
+  --background-accent: #e9ecef;     /* Hover states, subtle backgrounds */
+  
+  --text-primary: #212529;          /* Main text color */
+  --text-secondary: #495057;        /* Subdued text, descriptions, labels */
+  --text-muted: #6c757d;            /* Hint text, footers */
+  
+  --border-primary: #dee2e6;        /* Primary borders for containers, inputs */
+  --border-secondary: #ced4da;       /* Stronger borders or dividers */
+
+  --link-primary: #007bff;
+  --link-hover: #0056b3;
+
+  --button-primary-bg: #007bff;
+  --button-primary-text: #ffffff;
+  --button-primary-hover-bg: #0056b3;
+
+  --button-secondary-bg: #6c757d;
+  --button-secondary-text: #ffffff;
+  --button-secondary-hover-bg: #545b62;
+  
+  --button-disabled-bg: #adb5bd; /* Added a specific disabled bg */
+  --button-disabled-text: #6c757d; /* Added a specific disabled text */
+
+  --input-bg: #ffffff;
+  --input-border: #ced4da;
+  --input-focus-border: #86b7fe;
+  --input-text: #495057;
+  --input-placeholder-text: #6c757d; /* Added placeholder text color */
+
+  --error-text: #dc3545;
+  --error-rgb: 220, 53, 69; /* For rgba backgrounds */
+  --success-text: #198754;
+  --success-rgb: 25, 135, 84; /* For rgba backgrounds */
+  --info-text: #0dcaf0;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+
+  --input-focus-border-rgb: 0, 123, 255; /* for box-shadow */
+
+  /* Font variables from your other set (can keep these if used) */
+  --font-heading: 'Montserrat', sans-serif;
+  --font-body: 'Open Sans', sans-serif;
+
+  /* Add these for status badges */
+  --status-success-bg: #d1f7e0;
+  --status-success-text: #0d6b33;
+  --status-warning-bg: #fff3cd;
+  --status-warning-text: #856404;
+  --status-danger-bg: #f8d7da;
+  --status-danger-text: #721c24;
+}
+
+html[data-theme="dark"] {
+  color-scheme: dark;
+  /* A more refined Dark Theme */
+  --background-primary: #121212;      /* A very dark, but not pure black, background */
+  --background-secondary: #1e1e1e;    /* A slightly lighter grey for cards, inputs, and headers */
+  --background-accent: #2a2a2a;      /* A subtle hover state for list items */
+
+  --text-primary: #e0e0e0;            /* Primary text, slightly off-white for comfort */
+  --text-secondary: #a0a0a0;          /* Secondary text for labels and descriptions */
+  --text-muted: #707070;              /* Muted text for hints and footers */
+
+  --border-primary: #333333;          /* Main borders for components and cards */
+  --border-secondary: #444444;       /* A slightly lighter border for dividers */
+
+  --link-primary: #3b82f6;            /* A pleasant, modern blue */
+  --link-hover: #60a5fa;              /* A lighter blue for hover */
+
+  --button-primary-bg: var(--link-primary);
+  --button-primary-text: #ffffff;
+  --button-primary-hover-bg: var(--link-hover);
+
+  --button-secondary-bg: #333333;
+  --button-secondary-text: var(--text-primary);
+  --button-secondary-hover-bg: #444444;
+  
+  --button-disabled-bg: #2a2a2a;
+  --button-disabled-text: #555555;
+
+  --input-bg: var(--background-secondary); /* Inputs will now use the card background color */
+  --input-border: var(--border-primary);
+  --input-text: var(--text-primary);
+  --input-focus-border: var(--link-primary);
+  --input-placeholder-text: var(--text-secondary);
+
+  --error-text: #fca5a5;              /* Light red for text */
+  --error-rgb: 239, 68, 68;
+  --success-text: #86efac;            /* Light green for text */
+  --success-rgb: 34, 197, 94;
+  --info-text: #7dd3fc;               /* Light blue for info */
+
+  --shadow-sm: none; /* Removing shadows for a flatter look, relying on borders */
+  --shadow-md: none;
+  
+  --input-focus-border-rgb: 59, 130, 246; /* RGB for the new blue link color */
+
+  /* Add these for status badges in dark mode */
+  --status-success-bg: rgba(45, 211, 111, 0.15);
+  --status-success-text: #61d991;
+  --status-warning-bg: rgba(255, 193, 7, 0.15);
+  --status-warning-text: #ffca2c;
+  --status-danger-bg: rgba(220, 53, 69, 0.15);
+  --status-danger-text: #ff8993;
+}
+
+/* Reset and Body styles */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body, #__next { /* Ensure #__next also takes full height */
+  height: 100%;
+}
+
+body {
+  font-family: var(--font-body), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; /* Use var if --font-inter was intended, or keep Open Sans */
+  background-color: var(--background-primary); /* USE CHOSEN VARIABLE */
+  color: var(--text-primary); /* USE CHOSEN VARIABLE */
+  min-height: 100vh;
+  display: flex; 
+  flex-direction: column; 
+  line-height: 1.65; 
+  font-weight: 400;
+  -webkit-font-smoothing: antialiased; 
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.3s ease, color 0.3s ease; /* Add transition here */
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  font-weight: 700; 
+  color: var(--text-primary); /* UPDATE - was --text-heading which we are removing for simplicity */
+  margin-bottom: 0.6em;
+  line-height: 1.3;
+  transition: color 0.3s ease; /* Add transition */
+}
+h1 { font-size: 2.2rem; }
+h2 { font-size: 1.8rem; }
+h3 { font-size: 1.5rem; }
+
+a {
+  color: var(--link-primary); /* UPDATE - was --primary-accent */
+  text-decoration: none;
+  transition: color 0.3s ease; /* Add transition */
+}
+a:hover {
+  color: var(--link-hover); /* UPDATE - was --primary-accent-hover */
+  text-decoration: underline; 
+}
+
+p {
+  margin-bottom: 1.1rem;
+  /* Color will be inherited from body var(--text-primary) */
+}
+
+/* General Button Style */
+button, input[type="submit"], .button-style {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  padding: 10px 20px; 
+  border: 1px solid transparent; 
+  background-color: var(--button-primary-bg); /* UPDATE - was --primary-accent */
+  color: var(--button-primary-text);       /* UPDATE - was --text-on-primary */
+  border-radius: var(--border-radius-medium, 8px); /* Using fallback for border-radius if not defined */
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out, transform 0.1s ease, border-color 0.2s ease-in-out;
+  text-align: center;
+  display: inline-block;
+}
+button:hover, input[type="submit"]:hover, .button-style:hover {
+  background-color: var(--button-primary-hover-bg); /* UPDATE - was --primary-accent-hover */
+  transform: translateY(-1px); 
+}
+button:disabled, input[type="submit"]:disabled, .button-style.disabled {
+    background-color: var(--button-disabled-bg); /* UPDATE - was #cccccc */
+    color: var(--button-disabled-text); /* UPDATE - new variable */
+    cursor: not-allowed;
+    transform: none;
+    border-color: var(--button-disabled-bg); /* Ensure border matches */
+}
+
+/* Secondary Button Style */
+button.secondary, .button-style.secondary {
+  background-color: var(--button-secondary-bg); /* UPDATE - was --background-component */
+  color: var(--button-secondary-text);    /* UPDATE - was --text-body */
+  border: 1px solid var(--button-secondary-bg); /* UPDATE - was --border-input */
+}
+button.secondary:hover, .button-style.secondary:hover {
+  background-color: var(--button-secondary-hover-bg); /* UPDATE - was #f0f0f0 */
+  border-color: var(--button-secondary-hover-bg);    /* UPDATE - was #c0c0c0 */
+  /* color: var(--text-primary); UPDATE - color should remain --button-secondary-text or a hover variant for it */
+}
+
+/* Input field base style */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="search"],
+textarea,
+select {
+  font-family: var(--font-body);
+  padding: 10px 12px;
+  border: 1px solid var(--input-border); /* UPDATE - was --border-input */
+  border-radius: var(--border-radius-medium, 8px); /* Using fallback */
+  font-size: 1rem;
+  background-color: var(--input-bg); /* UPDATE - was --background-component */
+  color: var(--input-text);          /* UPDATE - was --text-body */
+  width: 100%; 
+  transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s, color 0.2s;
+}
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus,
+input[type="search"]:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: var(--input-focus-border); /* UPDATE - was --primary-accent */
+  /* UPDATE - use var(--input-focus-border-rgb) for the shadow color */
+  box-shadow: 0 0 0 3px rgba(var(--input-focus-border-rgb, 0, 123, 255), 0.2); 
+}
+/* Placeholder styling */
+input::placeholder,
+textarea::placeholder {
+  color: var(--input-placeholder-text);
+  opacity: 1; /* Firefox */
+}
+input:-ms-input-placeholder, /* Internet Explorer 10-11 */
+textarea:-ms-input-placeholder {
+  color: var(--input-placeholder-text);
+}
+input::-ms-input-placeholder, /* Microsoft Edge */
+textarea::-ms-input-placeholder {
+  color: var(--input-placeholder-text);
+}
+
+/* General element styling - UPDATE TO USE CHOSEN VARIABLES */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  font-weight: 700; 
+  color: var(--text-primary); /* UPDATE - was --text-heading which we are removing for simplicity */
+  margin-bottom: 0.6em;
+  line-height: 1.3;
+  transition: color 0.3s ease; /* Add transition */
+}
+h1 { font-size: 2.2rem; }
+h2 { font-size: 1.8rem; }
+h3 { font-size: 1.5rem; }
+
+a {
+  color: var(--link-primary); /* UPDATE - was --primary-accent */
+  text-decoration: none;
+  transition: color 0.3s ease; /* Add transition */
+}
+a:hover {
+  color: var(--link-hover); /* UPDATE - was --primary-accent-hover */
+  text-decoration: underline; 
+}
+
+p {
+  margin-bottom: 1.1rem;
+  /* Color will be inherited from body var(--text-primary) */
+}
