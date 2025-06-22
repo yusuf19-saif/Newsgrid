@@ -29,6 +29,11 @@ export default function SubmitPage() {
   const [verificationResult, setVerificationResult] = useState<any | null>(null);
   const [verificationError, setVerificationError] = useState<string | null>(null);
 
+  // --- NEW: States for the final submission process ---
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
+
   // Helper function to parse AI content into sections
   const parseAiContent = (contentStr: string) => {
     let trustScore = 0;
@@ -100,8 +105,51 @@ export default function SubmitPage() {
       setVerificationResult(result);
     } catch (err: any) {
       setVerificationError(err.message || 'Failed to verify article.');
+      console.error("Verification error:", err);
     } finally {
       setIsVerifying(false);
+    }
+  };
+
+  // --- NEW: Function to handle the final article submission ---
+  const handleFinalSubmit = async () => {
+    setSubmitError(null);
+    setSubmitSuccess(null);
+
+    if (!content.trim() || !headline.trim() || !articleType || !category) {
+      setSubmitError("Please fill out all required fields before submitting.");
+      return;
+    }
+    if (articleType === 'Factual' && !sources.trim()) {
+      setSubmitError('Sources are required for factual articles.');
+      return;
+    }
+    
+    setIsSubmitting(true);
+    const submissionData: ArticleSubmission = { headline, content, category, article_type: articleType, source: sources.trim() || null };
+
+    try {
+      const response = await fetch('/api/articles', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(submissionData),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || `Error: ${response.status}`);
+
+      setSubmitSuccess('Article submitted successfully! It is now pending review.');
+      // Clear the form
+      setHeadline('');
+      setContent('');
+      setCategory('');
+      setSources('');
+      setArticleType('');
+      setVerificationResult(null);
+      setVerificationError(null);
+    } catch (err: any) {
+      setSubmitError(err.message || 'An unexpected error occurred during submission.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -117,7 +165,7 @@ export default function SubmitPage() {
           <button 
             onClick={handleVerifyArticle}
             className={styles.reviewButton}
-            disabled={isVerifying}
+            disabled={isVerifying || isSubmitting}
           >
             {isVerifying ? 'Analyzing...' : 'Review & Analyze'}
           </button>
@@ -193,6 +241,21 @@ export default function SubmitPage() {
               </div>
             )}
           </div>
+        </div>
+
+        {/* --- NEW: Display Submission feedback inside the card --- */}
+        {submitError && <p className={styles.error}>{submitError}</p>}
+        {submitSuccess && <p className={styles.successMessage}>{submitSuccess}</p>}
+        
+        {/* --- NEW: Card Footer with Submit Button --- */}
+        <div className={styles.cardFooter}>
+            <button
+                onClick={handleFinalSubmit}
+                className={styles.submitButton}
+                disabled={isSubmitting || isVerifying}
+            >
+                {isSubmitting ? 'Submitting...' : 'Submit Article'}
+            </button>
         </div>
       </div>
 

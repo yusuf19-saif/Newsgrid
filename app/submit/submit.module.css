@@ -267,3 +267,49 @@
   border: 1px solid var(--status-danger-text);
   text-align: left; /* Better for reading error messages */
 }
+
+/* --- NEW STYLES for Card Footer and Final Submission --- */
+
+.cardFooter {
+  display: flex;
+  justify-content: flex-end; /* Align button to the right */
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border-primary);
+}
+
+.submitButton {
+  padding: 0.75rem 2rem;
+  background-color: var(--button-primary-bg); /* Use theme's primary button color */
+  color: var(--button-primary-text);
+  border: 1px solid var(--button-primary-bg);
+  border-radius: var(--border-radius-medium, 8px);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.submitButton:hover {
+  background-color: var(--button-primary-hover-bg);
+  border-color: var(--button-primary-hover-bg);
+}
+
+.submitButton:disabled {
+  background-color: var(--button-secondary-bg);
+  color: var(--button-secondary-text);
+  opacity: 0.65;
+  cursor: not-allowed;
+  border-color: var(--button-secondary-bg);
+}
+
+/* For displaying a success message inside the card */
+.successMessage {
+  padding: 1rem;
+  margin-top: 1.5rem;
+  border-radius: 8px;
+  background-color: var(--status-success-bg);
+  color: var(--status-success-text);
+  border: 1px solid var(--status-success-text);
+  text-align: center;
+}
