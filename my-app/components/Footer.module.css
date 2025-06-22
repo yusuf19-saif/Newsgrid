@@ -1,0 +1,59 @@
+/*
+  The footer is inside a padded container (.pageContent), which makes it look "boxed-in".
+  To fix this, we use negative margins to make the footer's background span the full width 
+  of its parent, while an inner container keeps the content aligned with the page.
+*/
+.footer {
+  background-color: var(--background-secondary); /* Match header/sidebar for consistency */
+  border-top: 1px solid var(--border-primary);
+  color: var(--text-secondary);
+  
+  /* Pull the footer to the edges of the padded parent container */
+  margin-left: -2rem; /* This must match the parent's horizontal padding */
+  margin-right: -2rem; /* This must match the parent's horizontal padding */
+  margin-top: 3rem; /* Add space above the footer */
+  
+  /* Add padding to the footer itself, mostly vertical */
+  padding: 2rem 0;
+}
+
+/* This container holds the content and aligns it with the rest of the page */
+.container {
+   max-width: 1100px;
+   margin: 0 auto;
+   padding: 0 2rem; /* Re-apply the horizontal padding to the content */
+   text-align: center;
+}
+
+/* A single flex container for all footer links */
+.footerNav {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap; /* Allow links to wrap on smaller screens */
+  gap: 1.5rem;
+  margin-bottom: 1rem; /* Space between nav and copyright */
+}
+
+.footerLink {
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: color 0.2s ease;
+}
+
+.footerLink:hover {
+  color: var(--link-primary);
+  text-decoration: underline;
+}
+
+.copyright {
+  font-size: 0.9rem;
+  color: var(--text-tertiary); /* Use a more subtle color */
+}
+
+/* --- Cleanup --- */
+/* These old classes are no longer needed with the new structure. */
+.links, .links a {
+  display: none;
+}

@@ -1,0 +1,58 @@
+.container {
+  max-width: 900px; /* Slightly narrower for article readability */
+  margin: 3rem auto; /* INCREASED top/bottom margin */
+  padding: 0 1rem;
+}
+
+.hero {
+  text-align: center;
+  margin-bottom: 3rem;
+  padding: 2rem 1rem;
+  background-color: var(--background-secondary); /* THEME UPDATE */
+  border: 1px solid var(--border-primary);      /* THEME UPDATE: Added border for dark mode */
+  border-radius: var(--border-radius-large, 12px); /* THEME UPDATE */
+  transition: background-color 0.3s ease, border-color 0.3s ease; /* THEME UPDATE */
+}
+
+.headline {
+  font-size: 2.5rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: var(--text-primary); /* THEME UPDATE */
+  transition: color 0.3s ease;
+}
+
+.description {
+  font-size: 1.1rem;
+  color: var(--text-secondary); /* THEME UPDATE */
+  line-height: 1.6;
+  max-width: 650px;
+  margin: 0 auto 1.5rem auto; /* Center description text */
+  transition: color 0.3s ease;
+}
+
+.feedTitle {
+  font-size: 1.8rem;
+  font-weight: 500;
+  margin-bottom: 1.5rem;
+  border-bottom: 2px solid var(--border-primary); /* THEME UPDATE */
+  padding-bottom: 0.5rem;
+  color: var(--text-primary); /* THEME UPDATE: Added color */
+  transition: color 0.3s ease, border-color 0.3s ease;
+}
+
+.articleList {
+  /* No list-specific styles needed if previews handle their own margin */
+}
+
+.noArticlesMessage {
+  font-size: 1.1rem;
+  color: var(--text-secondary); /* THEME UPDATE */
+  text-align: center;
+  padding: 3rem 1rem;
+  background-color: var(--background-secondary); /* THEME UPDATE */
+  border: 1px solid var(--border-primary);       /* THEME UPDATE */
+  border-radius: var(--border-radius-medium, 8px); /* THEME UPDATE */
+  margin-top: 1rem;
+  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+}

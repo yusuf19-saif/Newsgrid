@@ -1,0 +1,315 @@
+/* A wrapper for the entire page to give it a light gray background */
+.pageContainer {
+  background-color: var(--background-secondary); /* CHANGE: Use theme variable */
+  padding: 2rem;
+  min-height: calc(100vh - 65px); /* Full height minus header */
+  width: 100%;
+}
+
+/* The main white card for the submission form */
+.submitCard {
+  max-width: 900px;
+  margin: 0 auto;
+  background-color: var(--background-primary);
+  border-radius: var(--border-radius-large, 12px);
+  box-shadow: var(--shadow-md);
+  padding: 2rem;
+  border: 1px solid var(--border-primary);
+}
+
+/* Header section inside the card */
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--border-primary);
+}
+
+.cardTitle {
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+/* The main "Review & Analyze" button */
+.reviewButton {
+  padding: 0.75rem 1.5rem;
+  background-color: #4a69e2;
+  color: #ffffff;
+  border: none;
+  border-radius: var(--border-radius-medium, 8px);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+.reviewButton:hover {
+  background-color: #3b55b5;
+}
+.reviewButton:disabled {
+  background-color: #a0aec0;
+  cursor: not-allowed;
+}
+
+/* Container for the form inputs */
+.formContent {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* Headline input field styling to match the new design */
+.headlineInput {
+  width: 100%;
+  padding: 0.75rem; /* Full padding */
+  font-size: 1.25rem; /* Adjusted font size */
+  font-weight: 500;
+  background-color: var(--input-bg);
+  color: var(--input-text);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--border-radius-medium, 8px);
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.headlineInput:focus {
+  border-color: #4a69e2;
+  box-shadow: 0 0 0 3px rgba(74, 105, 226, 0.2);
+}
+
+.headlineInput::placeholder {
+  color: var(--text-muted);
+}
+
+/* Styling for the content editor area */
+.contentEditor {
+  width: 100%;
+  min-height: 300px;
+  border: 1px solid var(--border-primary);
+  border-radius: var(--border-radius-medium, 8px);
+  padding: 1rem;
+  font-size: 1rem;
+  line-height: 1.6;
+  background-color: transparent;
+  color: var(--text-primary);
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+.contentEditor:focus {
+  border-color: #4a69e2;
+}
+
+/* --- NEW STYLES for Metadata Section --- */
+.metadataGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr; /* Two equal columns */
+  gap: 2rem; /* Space between columns and rows */
+  margin-top: 1rem; /* Space above the metadata section */
+}
+
+/* A full-width container for the sources textarea */
+.sourcesGroup {
+  grid-column: 1 / -1; /* Make this span both columns */
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.metadataLabel {
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.metadataSelect,
+.sourcesTextarea {
+  width: 100%;
+  padding: 0.75rem;
+  font-size: 1rem;
+  background-color: var(--input-bg);
+  color: var(--input-text);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--border-radius-medium, 8px);
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.metadataSelect:focus,
+.sourcesTextarea:focus {
+  border-color: #4a69e2;
+  box-shadow: 0 0 0 3px rgba(74, 105, 226, 0.2);
+}
+
+.sourcesTextarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+/* --- NEW STYLES FOR THE RESULTS SECTION --- */
+
+/* This is the main container for the two-column report */
+.resultsContainer {
+  max-width: 900px;
+  margin: 2rem auto 0;
+  padding: 2rem;
+  background-color: var(--background-primary);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--border-radius-large, 12px);
+  box-shadow: var(--shadow-sm);
+  display: grid;
+  grid-template-columns: 1fr 140px; /* CHANGE: Give the score column a fixed width */
+  gap: 2rem;
+  align-items: center; /* CHANGE: Vertically center the meter and the text report */
+}
+
+/* A container for the left-hand side text report */
+.reportContent {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.aiResponseSection {
+  padding: 1rem;
+  background-color: var(--background-secondary);
+  border: 1px solid var(--border-primary);
+  border-left: 4px solid var(--link-primary);
+  border-radius: 8px;
+}
+
+.aiResponseSection h5 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.1em;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.aiResponseSection p,
+.aiResponseSection ul {
+  margin: 0;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  padding-left: 0;
+  list-style-position: inside;
+}
+
+.citations {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px dashed var(--border-secondary);
+}
+
+.citations h5 {
+  margin: 0 0 1rem 0; /* Add more space below title */
+}
+
+.citations ol {
+  list-style-type: none; /* We'll use a custom counter */
+  padding-left: 0;
+  margin: 0;
+  counter-reset: citation-counter;
+}
+
+.citationItem {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+  counter-increment: citation-counter;
+}
+
+.citationItem::before {
+  content: counter(citation-counter) ".";
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.citationLink {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-decoration: none;
+  color: var(--link-primary);
+  font-size: 0.95rem;
+}
+
+.favicon {
+  width: 16px;
+  height: 16px;
+}
+
+.citationLink:hover {
+  text-decoration: underline;
+}
+
+/* Container for the meter on the right */
+.scoreContainer {
+  display: flex;
+  justify-content: center;
+  padding-top: 1rem;
+}
+
+/* Error messages */
+.error {
+  padding: 1rem;
+  border-radius: 8px;
+  background-color: var(--status-danger-bg);
+  color: var(--status-danger-text);
+  border: 1px solid var(--status-danger-text);
+  text-align: left; /* Better for reading error messages */
+}
+
+/* --- NEW STYLES for Card Footer and Final Submission --- */
+
+.cardFooter {
+  display: flex;
+  justify-content: flex-end; /* Align button to the right */
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border-primary);
+}
+
+.submitButton {
+  padding: 0.75rem 2rem;
+  background-color: var(--button-primary-bg); /* Use theme's primary button color */
+  color: var(--button-primary-text);
+  border: 1px solid var(--button-primary-bg);
+  border-radius: var(--border-radius-medium, 8px);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.submitButton:hover {
+  background-color: var(--button-primary-hover-bg);
+  border-color: var(--button-primary-hover-bg);
+}
+
+.submitButton:disabled {
+  background-color: var(--button-secondary-bg);
+  color: var(--button-secondary-text);
+  opacity: 0.65;
+  cursor: not-allowed;
+  border-color: var(--button-secondary-bg);
+}
+
+/* For displaying a success message inside the card */
+.successMessage {
+  padding: 1rem;
+  margin-top: 1.5rem;
+  border-radius: 8px;
+  background-color: var(--status-success-bg);
+  color: var(--status-success-text);
+  border: 1px solid var(--status-success-text);
+  text-align: center;
+}

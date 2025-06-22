@@ -1,0 +1,41 @@
+.toggleButton {
+  background-color: var(--background-accent, #e0e0e0); /* Use theme variable, fallback for safety */
+  color: var(--text-primary, #212121);
+  border: 1px solid var(--border-primary, #cccccc);
+  padding: 0.5rem 1rem;
+  border-radius: 20px; /* Make it pill-shaped or circular */
+  cursor: pointer;
+  font-size: 0.9rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.1s ease;
+  /* Remove default button outline if desired */
+  outline: none;
+}
+
+.toggleButton:hover {
+  background-color: var(--border-primary, #cccccc); /* Adjust hover color */
+  border-color: var(--border-secondary, #aaaaaa);
+}
+
+.toggleButton:active {
+    transform: translateY(1px);
+}
+
+.icon {
+  width: 1.2em; /* Adjust icon size as needed */
+  height: 1.2em;
+  margin-right: 0.5em; /* If using text next to icon */
+}
+
+/* If you want only an icon button, adjust padding and remove margin-right from icon */
+/* Example for icon-only:
+.toggleButton {
+  padding: 0.6rem;
+  border-radius: 50%; // Make it circular
+}
+.icon {
+  margin-right: 0;
+}
+*/
