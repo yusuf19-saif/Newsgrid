@@ -3,6 +3,7 @@ import Link from 'next/link';
 import ArticlePreview from '@/components/ArticlePreview'; // Assuming ArticlePreview is in components
 import { Article } from '@/types'; // Assuming your Article type is in types/index.ts
 import styles from './page.module.css'; // Assuming you have some page-specific styles
+import { createSupabaseServerComponentClient } from '@/lib/supabaseServerComponentClient';
 
 // Utility function to format date (can be moved to a utils file later)
 function formatDate(dateString: string | undefined): string {
@@ -20,24 +21,29 @@ function formatDate(dateString: string | undefined): string {
 }
 
 async function getArticles(): Promise<Article[]> {
-  try {
-    // IMPORTANT: Ensure this URL is correct and uses port 3000
-    const res = await fetch('http://localhost:3000/api/articles', {
-      cache: 'no-store', // Fetches fresh data on every request
-    });
+  const supabase = createSupabaseServerComponentClient();
+  const { data, error } = await supabase
+    .from('articles')
+    .select(`
+      *,
+      author:profiles (
+        full_name
+      )
+    `)
+    .eq('status', 'Published')
+    .order('created_at', { ascending: false });
 
-    if (!res.ok) {
-      console.error('Failed to fetch articles, status:', res.status);
-      // Consider throwing an error or returning a specific error object
-      // For now, returning an empty array or logging should suffice for debugging
-      return [];
-    }
-    const data = await res.json();
-    return data || [];
-  } catch (error) {
+  if (error) {
     console.error('Error fetching articles:', error);
-    return []; // Return empty array on error
+    return [];
   }
+
+  // The query now returns an 'author' object with 'full_name'
+  // We need to map this to the 'author_full_name' property expected by the Article type
+  return data.map(article => ({
+    ...article,
+    author_full_name: article.author?.full_name || 'Anonymous'
+  }));
 }
 
 export default async function HomePage() {
