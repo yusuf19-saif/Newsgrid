@@ -8,7 +8,7 @@ import { useRouter } from 'next/navigation';
 // import { redirect } from 'next/navigation'; 
 
 // Import the Server Action
-import { handleSignOut } from '@/app/actions/authActions'; // Adjust path if needed
+import { handleSignOut } from '@/actions/authActions'; // Adjust path if needed
 
 // Import the ThemeToggleButton
 import { ThemeToggleButton } from './ThemeToggleButton'; // Ensure this path is correct
