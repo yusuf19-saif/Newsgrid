@@ -252,80 +252,32 @@ export default function SubmitPage() {
             <button
                 onClick={handleFinalSubmit}
                 className={styles.submitButton}
-                disabled={isSubmitting || isVerifying}
+                disabled={isSubmitting || !headline || !content || !category || !articleType}
             >
                 {isSubmitting ? 'Submitting...' : 'Submit Article'}
             </button>
         </div>
       </div>
 
-      {/* --- Display Area for Verification Results & Errors --- */}
-      {/* We removed the yellow loading box. The button state is enough. */}
-      {(verificationError || verificationResult) && (
+      {/* --- AI VERIFICATION RESULTS --- */}
+      {verificationError && <p className={styles.error}>{verificationError}</p>}
+      
+      {aiResponse && (
         <div className={styles.resultsContainer}>
-          {verificationError ? (
-            <p className={styles.error}>{verificationError}</p>
-          ) : (
-            <>
-              {/* Left Column: Report Details */}
-              <div className={styles.reportContent}>
-                {sections.length > 0 ? (
-                  sections.map((section, idx) => (
-                    <div key={idx} className={styles.aiResponseSection}>
-                      <h5>{section.title}</h5>
-                      {/* Use a simple list for suggestions */}
-                      {section.title === 'Suggestions for Improvement' ? (
-                        <ul>
-                          {section.text.split(/ - /).filter(item => item.trim()).map((item, i) => <li key={i}>{item}</li>)}
-                        </ul>
-                      ) : (
-                        <p>{section.text.split('\n').map((line, i) => <span key={i}>{line}<br /></span>)}</p>
-                      )}
-                    </div>
-                  ))
-                ) : <p>Could not parse AI analysis.</p>}
-                
-                {/* --- NEW CITATIONS SECTION --- */}
-                {verificationResult.citations?.length > 0 && (
-                  <div className={styles.citations}>
-                    <h5>Citations Used by AI</h5>
-                    <ol>
-                      {verificationResult.citations.map((citationUrl: string, index: number) => {
-                        try {
-                          const url = new URL(citationUrl);
-                          const domain = url.hostname.replace(/^www\./, ''); // Remove 'www.'
-                          const faviconUrl = `https://www.google.com/s2/favicons?sz=32&domain=${domain}`;
-                          
-                          return (
-                            <li key={index} className={styles.citationItem}>
-                              <a href={citationUrl} target="_blank" rel="noopener noreferrer" className={styles.citationLink}>
-                                <img src={faviconUrl} alt="favicon" className={styles.favicon} />
-                                <span>{domain}</span>
-                              </a>
-                            </li>
-                          );
-                        } catch (e) {
-                          // Fallback for invalid URLs
-                          return (
-                             <li key={index} className={styles.citationItem}>
-                               <a href={citationUrl} target="_blank" rel="noopener noreferrer" className={styles.citationLink}>
-                                 <span>{citationUrl}</span>
-                               </a>
-                            </li>
-                          );
-                        }
-                      })}
-                    </ol>
-                  </div>
-                )}
+          <div className={styles.reportContent}>
+            {sections.map((section, index) => (
+              <div key={index} className={styles.reportCard}>
+                <h3 className={styles.reportCardTitle}>{section.title}</h3>
+                <div 
+                  className={styles.reportCardBody}
+                  dangerouslySetInnerHTML={{ __html: section.text.replace(/\n/g, '<br />').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') }} 
+                />
               </div>
-
-              {/* Right Column: Score Meter */}
-              <div className={styles.scoreContainer}>
-                {trustScore > 0 && <TrustScoreMeter score={trustScore} />}
-              </div>
-            </>
-          )}
+            ))}
+          </div>
+          <div className={styles.scoreContainer}>
+            <TrustScoreMeter score={trustScore} />
+          </div>
         </div>
       )}
     </div>

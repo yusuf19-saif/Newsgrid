@@ -158,104 +158,56 @@
 .resultsContainer {
   max-width: 900px;
   margin: 2rem auto 0;
-  padding: 2rem;
-  background-color: var(--background-primary);
-  border: 1px solid var(--border-primary);
-  border-radius: var(--border-radius-large, 12px);
-  box-shadow: var(--shadow-sm);
   display: grid;
-  grid-template-columns: 1fr 140px; /* CHANGE: Give the score column a fixed width */
+  grid-template-columns: 1fr auto; /* Main content and a score column */
   gap: 2rem;
-  align-items: center; /* CHANGE: Vertically center the meter and the text report */
+  align-items: flex-start; /* Align to the top */
 }
 
-/* A container for the left-hand side text report */
+/* Container for the left-hand side cards */
 .reportContent {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
 }
 
-.aiResponseSection {
-  padding: 1rem;
-  background-color: var(--background-secondary);
+/* Individual card style for each section of the report */
+.reportCard {
+  background-color: var(--background-primary);
   border: 1px solid var(--border-primary);
-  border-left: 4px solid var(--link-primary);
-  border-radius: 8px;
+  border-radius: var(--border-radius-large, 12px);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-sm);
 }
 
-.aiResponseSection h5 {
-  margin: 0 0 0.5rem 0;
-  font-size: 1.1em;
+.reportCardTitle {
+  font-size: 1.25rem;
+  font-weight: 600;
   color: var(--text-primary);
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  margin-top: 0;
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border-secondary);
 }
 
-.aiResponseSection p,
-.aiResponseSection ul {
-  margin: 0;
+.reportCardBody {
+  font-size: 1rem;
   line-height: 1.6;
   color: var(--text-secondary);
-  padding-left: 0;
-  list-style-position: inside;
 }
 
-.citations {
-  margin-top: 1rem;
-  padding-top: 1rem;
-  border-top: 1px dashed var(--border-secondary);
-}
-
-.citations h5 {
-  margin: 0 0 1rem 0; /* Add more space below title */
-}
-
-.citations ol {
-  list-style-type: none; /* We'll use a custom counter */
-  padding-left: 0;
-  margin: 0;
-  counter-reset: citation-counter;
-}
-
-.citationItem {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 0.75rem;
-  counter-increment: citation-counter;
-}
-
-.citationItem::before {
-  content: counter(citation-counter) ".";
+.reportCardBody strong {
+  color: var(--text-primary);
   font-weight: 600;
-  color: var(--text-secondary);
 }
 
-.citationLink {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  text-decoration: none;
-  color: var(--link-primary);
-  font-size: 0.95rem;
-}
-
-.favicon {
-  width: 16px;
-  height: 16px;
-}
-
-.citationLink:hover {
-  text-decoration: underline;
-}
-
-/* Container for the meter on the right */
 .scoreContainer {
+  position: sticky; /* Makes the score meter stick on screen as you scroll */
+  top: 85px; /* Adjust based on your header height */
   display: flex;
   justify-content: center;
-  padding-top: 1rem;
+  align-items: center;
+  padding: 1rem;
 }
 
 /* Error messages */
