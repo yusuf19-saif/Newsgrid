@@ -81,7 +81,7 @@ export default async function ArticlePage({ params }: { params: ArticlePageParam
             or render it as plain text. For now, assuming plain text or trusted content. */}
         <div className={styles.body}>
           {/* Render content - split into paragraphs if content has line breaks */}
-          {articleWithAuthor.content && articleWithAuthor.content.split('\n').map((paragraph, index) => (
+          {articleWithAuthor.content && articleWithAuthor.content.split('\n').map((paragraph: string, index: number) => (
             paragraph.trim() ? <p key={index}>{paragraph}</p> : null
           ))}
         </div>
