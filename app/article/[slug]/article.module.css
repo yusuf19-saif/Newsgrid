@@ -2,8 +2,8 @@
   max-width: 800px; /* Consistent width for reading */
   margin: 3rem auto;
   padding: 2rem;
-  background-color: #ffffff;
-  border: 1px solid #dee2e6;
+  background-color: var(--background-color-light); /* Use theme variable */
+  border: 1px solid var(--border-color); /* Use theme variable */
   border-radius: 6px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
 }
@@ -17,15 +17,15 @@
   font-weight: 700;
   margin-bottom: 1rem;
   line-height: 1.3;
-  color: #212529;
+  color: var(--text-color-primary); /* Use theme variable */
 }
 
 .meta {
   font-size: 0.9rem;
-  color: #6c757d;
+  color: var(--text-color-secondary); /* Use theme variable */
   margin-bottom: 2rem;
   padding-bottom: 1rem;
-  border-bottom: 1px solid #e9ecef; /* Separator line */
+  border-bottom: 1px solid var(--border-color); /* Use theme variable */
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem 1.5rem; /* Row and column gap */
@@ -38,7 +38,7 @@
 .body {
   font-size: 1.1rem; /* Slightly larger font for readability */
   line-height: 1.7; /* Increased line height */
-  color: #343a40;
+  color: var(--text-color-primary); /* Use theme variable */
 }
 
 .body p {
@@ -47,5 +47,5 @@
 
 .body strong {
     font-weight: 600; /* Make slug stand out a bit */
-    color: #0056b3;
+    color: var(--primary-color); /* Use theme variable for accents */
 }
