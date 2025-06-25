@@ -92,7 +92,7 @@ export default async function ArticlePage({ params }: { params: ArticlePageParam
             <h3 className={styles.sourcesTitle}>Sources</h3>
             <ol className={styles.sourcesList}>
               {/* Split sources by comma or newline, then trim whitespace */}
-              {articleWithAuthor.source.split(/[\n,]+/).map((source, index) => {
+              {articleWithAuthor.source.split(/[\n,]+/).map((source: string, index: number) => {
                 const trimmedSource = source.trim();
                 if (trimmedSource) {
                   return (
