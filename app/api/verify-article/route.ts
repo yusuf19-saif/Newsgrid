@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+// Increase the maximum duration for this function (e.g., to 30 seconds)
+export const maxDuration = 30; 
+
 export async function POST(request: NextRequest) {
   try {
     // 1. Get the article content from the request body
