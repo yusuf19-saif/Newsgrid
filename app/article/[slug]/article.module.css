@@ -49,3 +49,36 @@
     font-weight: 600; /* Make slug stand out a bit */
     color: var(--primary-color); /* Use theme variable for accents */
 }
+
+/* New styles for the sources section */
+.sourcesSection {
+  margin-top: 3rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.sourcesTitle {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+  color: var(--text-color-primary);
+}
+
+.sourcesList {
+  padding-left: 20px; /* Standard indentation for ordered lists */
+  list-style-type: decimal; /* Ensures numbers are shown */
+  color: var(--text-color-secondary);
+}
+
+.sourcesList li {
+  margin-bottom: 0.75rem;
+}
+
+.sourceLink {
+  color: var(--primary-color);
+  text-decoration: none;
+  word-break: break-all; /* Break long URLs to prevent overflow */
+}
+
+.sourceLink:hover {
+  text-decoration: underline;
+}

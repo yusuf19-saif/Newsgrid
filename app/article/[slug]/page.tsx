@@ -68,8 +68,6 @@ export default async function ArticlePage({ params }: { params: ArticlePageParam
           ) : articleWithAuthor.author_full_name && articleWithAuthor.author_full_name !== 'Anonymous' ? (
             <span>By: {articleWithAuthor.author_full_name}</span>
           ) : null} {/* Or a fallback for "Anonymous" if desired */}
-          {/* Conditionally render source */}
-          {articleWithAuthor.source && <span>Source: {articleWithAuthor.source}</span>}
           {/* Link to category page */}
           <Link href={`/category/${encodeURIComponent(articleWithAuthor.category.toLowerCase())}`}>
               Category: {articleWithAuthor.category}
@@ -81,12 +79,35 @@ export default async function ArticlePage({ params }: { params: ArticlePageParam
         {/* Warning: Rendering raw HTML from user input is dangerous (XSS).
             If 'content' could contain HTML, use a sanitizer library (like DOMPurify)
             or render it as plain text. For now, assuming plain text or trusted content. */}
-            <div className={styles.body}>
-      {/* Render content - split into paragraphs if content has line breaks */}
-      {articleWithAuthor.content && articleWithAuthor.content.split('\n').map((paragraph: string, index: number) => (
-        paragraph.trim() ? <p key={index}>{paragraph}</p> : null
-      ))}
-    </div>
+        <div className={styles.body}>
+          {/* Render content - split into paragraphs if content has line breaks */}
+          {articleWithAuthor.content && articleWithAuthor.content.split('\n').map((paragraph, index) => (
+            paragraph.trim() ? <p key={index}>{paragraph}</p> : null
+          ))}
+        </div>
+
+        {/* NEW: Sources section at the bottom */}
+        {articleWithAuthor.source && (
+          <div className={styles.sourcesSection}>
+            <h3 className={styles.sourcesTitle}>Sources</h3>
+            <ol className={styles.sourcesList}>
+              {/* Split sources by comma or newline, then trim whitespace */}
+              {articleWithAuthor.source.split(/[\n,]+/).map((source, index) => {
+                const trimmedSource = source.trim();
+                if (trimmedSource) {
+                  return (
+                    <li key={index}>
+                      <a href={trimmedSource} target="_blank" rel="noopener noreferrer" className={styles.sourceLink}>
+                        {trimmedSource}
+                      </a>
+                    </li>
+                  );
+                }
+                return null;
+              })}
+            </ol>
+          </div>
+        )}
       </article>
     </div>
   );
