@@ -44,6 +44,7 @@ Here is your process:
       },
       body: JSON.stringify({
         model: "sonar-pro", // Or another model like "sonar-small"
+        temperature: 0.2,
         messages: [
           {
             role: "system",
