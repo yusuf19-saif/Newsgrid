@@ -1,11 +1,11 @@
 import React from 'react';
 import styles from './TrustScoreMeter.module.css';
 
-interface TrustScoreMeterProps {
+type TrustScoreMeterProps = {
   score: number;
-}
+};
 
-const TrustScoreMeter: React.FC<TrustScoreMeterProps> = ({ score }) => {
+export const TrustScoreMeter = ({ score }: TrustScoreMeterProps) => {
   const radius = 50;
   const stroke = 8;
   const normalizedRadius = radius - stroke * 2;
@@ -53,5 +53,3 @@ const TrustScoreMeter: React.FC<TrustScoreMeterProps> = ({ score }) => {
     </div>
   );
 };
-
-export default TrustScoreMeter;
