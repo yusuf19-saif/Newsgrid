@@ -1,6 +1,6 @@
 'use server';
 
-import Perplexity from 'perplexity';
+import { Perplexity } from 'perplexity';
 
 interface VerifyArticleParams {
   headline: string;
