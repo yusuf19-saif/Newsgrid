@@ -201,6 +201,41 @@
   font-weight: 600;
 }
 
+.citationsList {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.citationLink {
+  display: block;
+  text-decoration: none;
+  padding: 0.75rem;
+  border-radius: var(--border-radius-medium);
+  background-color: var(--background-secondary);
+  transition: background-color 0.2s ease;
+}
+
+.citationLink:hover {
+  background-color: var(--background-tertiary);
+}
+
+.citationTitle {
+  display: block;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 1rem;
+  margin-bottom: 0.25rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.citationDomain {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
 .scoreContainer {
   position: sticky; /* Makes the score meter stick on screen as you scroll */
   top: 85px; /* Adjust based on your header height */

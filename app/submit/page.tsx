@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import styles from './submit.module.css';
 import TrustScoreMeter from '@/components/TrustScoreMeter';
 
@@ -11,6 +11,44 @@ interface ArticleSubmission {
   category: string;
   source?: string | null;
   article_type: 'Factual' | 'Reporting/Rumor' | '';
+}
+
+// NEW: A component to fetch and display a single citation link
+function CitationLink({ url }: { url: string }) {
+  const [title, setTitle] = useState(url); // Default to showing the URL
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchTitle = async () => {
+      try {
+        const response = await fetch('/api/get-page-title', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url }),
+        });
+        const data = await response.json();
+        if (data.title) {
+          setTitle(data.title);
+        }
+      } catch (error) {
+        console.error("Failed to fetch title for", url, error);
+        // If there's an error, the title remains the URL
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchTitle();
+  }, [url]); // Re-run effect if the URL prop changes
+
+  const domain = new URL(url).hostname.replace('www.', '');
+
+  return (
+    <a href={url} target="_blank" rel="noopener noreferrer" className={styles.citationLink}>
+      <span className={styles.citationTitle}>{isLoading ? 'Loading title...' : title}</span>
+      <span className={styles.citationDomain}>{domain}</span>
+    </a>
+  );
 }
 
 export default function SubmitPage() {
@@ -265,15 +303,32 @@ export default function SubmitPage() {
       {aiResponse && (
         <div className={styles.resultsContainer}>
           <div className={styles.reportContent}>
-            {sections.map((section, index) => (
-              <div key={index} className={styles.reportCard}>
-                <h3 className={styles.reportCardTitle}>{section.title}</h3>
-                <div 
-                  className={styles.reportCardBody}
-                  dangerouslySetInnerHTML={{ __html: section.text.replace(/\n/g, '<br />').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') }} 
-                />
-              </div>
-            ))}
+            {sections.map((section, index) => {
+              // Special rendering for the Citations section
+              if (section.title === 'Citations Used by AI') {
+                const urls = section.text.split(/[\n,]+/).map(line => line.replace(/^\d+\.\s*/, '').trim()).filter(Boolean);
+                return (
+                  <div key={index} className={styles.reportCard}>
+                    <h3 className={styles.reportCardTitle}>{section.title}</h3>
+                    <div className={styles.citationsList}>
+                      {urls.map((url, urlIndex) => (
+                        <CitationLink key={urlIndex} url={url} />
+                      ))}
+                    </div>
+                  </div>
+                );
+              }
+              // Default rendering for all other sections
+              return (
+                <div key={index} className={styles.reportCard}>
+                  <h3 className={styles.reportCardTitle}>{section.title}</h3>
+                  <div 
+                    className={styles.reportCardBody}
+                    dangerouslySetInnerHTML={{ __html: section.text.replace(/\n/g, '<br />').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') }} 
+                  />
+                </div>
+              );
+            })}
           </div>
           <div className={styles.scoreContainer}>
             <TrustScoreMeter score={trustScore} />
