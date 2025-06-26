@@ -32,7 +32,8 @@ Here is your process:
 2.  **Headline Relevance:** Analyze the provided headline and article content. In a section called "### Headline Relevance", state whether the headline accurately reflects the content or if it appears to be misleading or clickbait.
 3.  **Factual Accuracy & Independent Verification:** After analyzing the provided sources, conduct your own real-time web search for independent corroboration of the article's main claims. In a section called "### Factual Accuracy", detail your findings. Note any claims that are well-supported by a consensus of reliable, independent sources.
 4.  **Actionable Suggestions:** Based on your complete analysis, provide a short, bulleted list of 2-3 clear, actionable suggestions for the author. Call this section "### Suggestions for Improvement".
-5.  **Trust Score:** Finally, conclude your entire analysis with a numerical score. On a new line, write "Trust Score: [number]/100", where the number is heavily weighted by how well the article aligns with the provided sources and independent verification.`;
+5.  **Trust Score:** Finally, conclude your entire analysis with a numerical score. On a new line, write "Trust Score: [number]/100", where the number is heavily weighted by how well the article aligns with the provided sources and independent verification.
+6.  **Citations:** At the very end of your response, create a section called "### Citations Used by AI". In this section, provide a numbered list of the URLs for the independent sources you used to verify the article's claims.`;
 
     // 3. Call the Perplexity API with the new prompt
     const perplexityApiUrl = 'https://api.perplexity.ai/chat/completions';
