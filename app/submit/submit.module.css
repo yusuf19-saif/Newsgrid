@@ -300,3 +300,169 @@
   border: 1px solid var(--status-success-text);
   text-align: center;
 }
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+  color: var(--text-color-primary);
+}
+
+.title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  text-align: center;
+}
+
+.description {
+  font-size: 1.1rem;
+  color: var(--text-color-secondary);
+  margin-bottom: 2.5rem;
+  text-align: center;
+}
+
+.form {
+  background-color: var(--secondary-background-color);
+  padding: 2rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  margin-bottom: 2rem;
+}
+
+.formGroup {
+  margin-bottom: 1.5rem;
+}
+
+.label {
+  display: block;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+.input,
+.textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background-color: var(--background-color);
+  color: var(--text-color-primary);
+  font-size: 1rem;
+}
+
+.textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+.button {
+  width: 100%;
+  padding: 1rem;
+  background-color: var(--accent-color);
+  color: #ffffff;
+  border: none;
+  border-radius: 4px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.button:hover:not(:disabled) {
+  background-color: var(--accent-color-hover);
+}
+
+.button:disabled {
+  background-color: #555;
+  cursor: not-allowed;
+}
+
+.loadingContainer {
+  text-align: center;
+  padding: 2rem;
+}
+
+.spinner {
+  border: 4px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top: 4px solid var(--accent-color);
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 1rem;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.resultsContainer {
+  margin-top: 3rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.resultsTitle {
+  font-size: 2rem;
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.resultsWrapper {
+  display: grid;
+  grid-template-columns: 1fr 250px;
+  gap: 2rem;
+  align-items: flex-start;
+}
+
+.reportContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.trustScoreContainer {
+  position: sticky;
+  top: 2rem;
+}
+
+.reportCard {
+  background-color: var(--secondary-background-color);
+  padding: 1.5rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+}
+
+.reportCardTitle {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0 0 1rem 0;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-color-primary);
+}
+
+.citationsList {
+  padding: 0;
+  margin: 0;
+  list-style-position: inside;
+}
+
+.resultsContainer p {
+  line-height: 1.6;
+}
+
+/* Responsive adjustments */
+@media (max-width: 900px) {
+  .resultsWrapper {
+    grid-template-columns: 1fr;
+  }
+  .trustScoreContainer {
+    position: static;
+    margin-top: 2rem;
+    display: flex;
+    justify-content: center;
+  }
+}
