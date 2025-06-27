@@ -43,9 +43,20 @@ Your response MUST be a single markdown document. It must contain every single o
 - Based on all the factors above, provide a final "Trust Score" on a scale from 0 to 100. Be strict. Irrelevant headlines or sources should result in a very low score.
 - **The trust score must be on a new line and formatted exactly as: Trust Score: [score]/100**
 
-**CRITICAL INSTRUCTION:** Your entire response must be the markdown report. Do not add any conversational text before or after. Generate all seven sections. An incomplete report is a failed task.`;
+**CRITICAL INSTRUCTION:** Your entire response must be the markdown report. Do not add any conversational text before or after. Generate all six sections. An incomplete report is a failed task.`;
 
     const { text } = await generateText({
         model: perplexity('sonar-large-32k-online'),
         system: systemPrompt,
-        prompt: `
+        prompt: `Here is the article to analyze:\n\n**Headline:** ${headline}\n\n**Content:**\n${content}\n\n**User-Provided Sources:**\n${sources}`,
+    });
+
+    // The new library returns the text directly, so we need to wrap it
+    // to match the structure the client-side component expects.
+
+    return { text };
+  } catch (error) {
+    console.error('Error verifying article:', error);
+    return { error: 'An error occurred while verifying the article.' };
+  }
+}
