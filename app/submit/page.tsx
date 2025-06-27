@@ -99,9 +99,11 @@ const SubmitPage = () => {
           <h2 className={styles.resultsTitle}>AI Analysis</h2>
           <div className={styles.resultsWrapper}>
             <div className={styles.reportContainer}>
-              <ReactMarkdown className={styles.markdownContent}>
-                {aiResponse}
-              </ReactMarkdown>
+              <div className={styles.markdownContent}>
+                <ReactMarkdown>
+                  {aiResponse}
+                </ReactMarkdown>
+              </div>
             </div>
             <div className={styles.trustScoreContainer}>
               {trustScore !== null && <TrustScoreMeter score={trustScore} />}
