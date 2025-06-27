@@ -9,7 +9,19 @@ interface VerifyArticleParams {
   sources: string;
 }
 
-export async function verifyArticle({ headline, content, sources }: VerifyArticleParams) {
+// Define the explicit return types for our function
+type VerificationSuccess = {
+  choices: { message: { content: string } }[];
+  error?: undefined;
+  message?: undefined;
+};
+type VerificationError = {
+  error: true;
+  message: string;
+};
+type VerificationResult = VerificationSuccess | VerificationError;
+
+export async function verifyArticle({ headline, content, sources }: VerifyArticleParams): Promise<VerificationResult> {
   try {
     // The detailed system prompt we refined
     const systemPrompt = `You are a professional fact-checker and editor. Your task is to generate a structured analysis report based on a user-submitted news article.
@@ -51,12 +63,18 @@ Your response MUST be a single markdown document. It must contain every single o
         prompt: `Here is the article to analyze:\n\n**Headline:** ${headline}\n\n**Content:**\n${content}\n\n**User-Provided Sources:**\n${sources}`,
     });
 
-    // The new library returns the text directly, so we need to wrap it
-    // to match the structure the client-side component expects.
-
-    return { text };
+    return {
+      choices: [{
+        message: {
+          content: text
+        }
+      }]
+    };
   } catch (error) {
-    console.error('Error verifying article:', error);
-    return { error: 'An error occurred while verifying the article.' };
+    console.error('Error verifying article with Perplexity:', error);
+    return {
+      error: true,
+      message: error instanceof Error ? error.message : 'An unknown error occurred.',
+    };
   }
 }
