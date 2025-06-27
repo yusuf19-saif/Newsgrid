@@ -1,6 +1,7 @@
 'use server';
 
-import Perplexity from 'perplexity';
+import { perplexity } from '@ai-sdk/perplexity';
+import { generateText } from 'ai';
 
 interface VerifyArticleParams {
   headline: string;
@@ -10,10 +11,6 @@ interface VerifyArticleParams {
 
 export async function verifyArticle({ headline, content, sources }: VerifyArticleParams) {
   try {
-    const perplexity = new Perplexity({
-      apiKey: process.env.PERPLEXITY_API_KEY,
-    });
-
     // The detailed system prompt we refined
     const systemPrompt = `You are a professional fact-checker and editor. Your task is to generate a structured analysis report based on a user-submitted news article.
 The user will provide a headline, the article content, and a list of sources.
@@ -51,21 +48,21 @@ Your response MUST be a single markdown document. It must contain every single o
 
 **CRITICAL INSTRUCTION:** Your entire response must be the markdown report. Do not add any conversational text before or after. Generate all seven sections. An incomplete report is a failed task.`;
 
-    const response = await perplexity.chat.completions.create({
-      model: 'llama-3-sonar-large-32k-online',
-      messages: [
-        {
-          role: 'system',
-          content: systemPrompt,
-        },
-        {
-          role: 'user',
-          content: `Here is the article to analyze:\n\n**Headline:** ${headline}\n\n**Content:**\n${content}\n\n**User-Provided Sources:**\n${sources}`,
-        },
-      ],
+    const { text } = await generateText({
+        model: perplexity('llama-3-sonar-large-32k-online'),
+        system: systemPrompt,
+        prompt: `Here is the article to analyze:\n\n**Headline:** ${headline}\n\n**Content:**\n${content}\n\n**User-Provided Sources:**\n${sources}`,
     });
 
-    return response;
+    // The new library returns the text directly, so we need to wrap it
+    // to match the structure the client-side component expects.
+    return {
+      choices: [{
+        message: {
+          content: text
+        }
+      }]
+    };
   } catch (error) {
     console.error('Error verifying article with Perplexity:', error);
     // Return a structured error so the client can handle it
