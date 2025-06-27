@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createSupabaseClient } from '@/lib/supabaseClient';
+import { createSupabaseBrowserClient } from '@/lib/supabaseClient';
 import { verifyArticle } from '@/app/actions/articleActions';
 import styles from './submit.module.css';
 import { TrustScoreMeter } from '@/components/TrustScoreMeter';
@@ -20,7 +20,7 @@ type SubmitArticleClientProps = {
 
 const SubmitArticleClient = ({ categories }: SubmitArticleClientProps) => {
   const router = useRouter();
-  const supabase = createSupabaseClient();
+  const supabase = createSupabaseBrowserClient();
   
   const [headline, setHeadline] = useState('');
   const [content, setContent] = useState('');
