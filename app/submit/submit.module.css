@@ -308,26 +308,27 @@
   color: var(--text-color-primary);
 }
 
+.header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
 .title {
   font-size: 2.5rem;
   font-weight: 700;
   margin-bottom: 0.5rem;
-  text-align: center;
 }
 
 .description {
   font-size: 1.1rem;
   color: var(--text-color-secondary);
-  margin-bottom: 2.5rem;
-  text-align: center;
 }
 
-.form {
+.formContainer {
   background-color: var(--secondary-background-color);
-  padding: 2rem;
-  border-radius: 8px;
+  padding: 2.5rem;
+  border-radius: 12px;
   border: 1px solid var(--border-color);
-  margin-bottom: 2rem;
 }
 
 .formGroup {
@@ -336,34 +337,57 @@
 
 .label {
   display: block;
-  font-weight: 500;
-  margin-bottom: 0.5rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+  font-size: 0.9rem;
 }
 
 .input,
-.textarea {
+.textarea,
+.select {
   width: 100%;
-  padding: 0.75rem;
+  padding: 0.8rem 1rem;
   border: 1px solid var(--border-color);
-  border-radius: 4px;
+  border-radius: 6px;
   background-color: var(--background-color);
   color: var(--text-color-primary);
   font-size: 1rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.input:focus,
+.textarea:focus,
+.select:focus {
+  outline: none;
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 3px var(--accent-color-transparent);
 }
 
 .textarea {
   resize: vertical;
-  min-height: 100px;
+  min-height: 120px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+.buttonGroup {
+  margin-top: 2rem;
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
 }
 
 .button {
-  width: 100%;
-  padding: 1rem;
+  padding: 0.8rem 1.5rem;
   background-color: var(--accent-color);
   color: #ffffff;
   border: none;
-  border-radius: 4px;
-  font-size: 1.1rem;
+  border-radius: 6px;
+  font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
   transition: background-color 0.2s ease;
@@ -373,9 +397,29 @@
   background-color: var(--accent-color-hover);
 }
 
+.secondaryButton {
+  background-color: var(--secondary-button-background);
+  color: var(--text-color-primary);
+  border: 1px solid var(--border-color);
+}
+
+.secondaryButton:hover:not(:disabled) {
+  background-color: var(--secondary-background-color-hover);
+}
+
 .button:disabled {
-  background-color: #555;
+  opacity: 0.6;
   cursor: not-allowed;
+}
+
+.errorBox {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background-color: #4d1c1c;
+  border: 1px solid #ff4d4d;
+  color: #ffcccc;
+  border-radius: 8px;
+  text-align: center;
 }
 
 .loadingContainer {
@@ -418,9 +462,26 @@
 }
 
 .reportContainer {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
+  background-color: var(--secondary-background-color);
+  padding: 1.5rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+}
+
+.markdownContent h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 1.5rem 0 1rem 0;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.markdownContent ul {
+  padding-left: 20px;
+}
+
+.markdownContent p {
+  line-height: 1.6;
 }
 
 .trustScoreContainer {
@@ -428,33 +489,6 @@
   top: 2rem;
 }
 
-.reportCard {
-  background-color: var(--secondary-background-color);
-  padding: 1.5rem;
-  border-radius: 8px;
-  border: 1px solid var(--border-color);
-}
-
-.reportCardTitle {
-  font-size: 1.1rem;
-  font-weight: 600;
-  margin: 0 0 1rem 0;
-  padding-bottom: 0.75rem;
-  border-bottom: 1px solid var(--border-color);
-  color: var(--text-color-primary);
-}
-
-.citationsList {
-  padding: 0;
-  margin: 0;
-  list-style-position: inside;
-}
-
-.resultsContainer p {
-  line-height: 1.6;
-}
-
-/* Responsive adjustments */
 @media (max-width: 900px) {
   .resultsWrapper {
     grid-template-columns: 1fr;
@@ -464,5 +498,17 @@
     margin-top: 2rem;
     display: flex;
     justify-content: center;
+  }
+}
+
+@media (max-width: 600px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+  .buttonGroup {
+    flex-direction: column;
+  }
+  .button {
+    width: 100%;
   }
 }
