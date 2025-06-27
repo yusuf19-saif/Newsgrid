@@ -4,38 +4,12 @@ import { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { verifyArticle } from '@/app/actions/articleActions';
 import styles from './submit.module.css';
-import CitationItem from '@/components/CitationItem';
 import { TrustScoreMeter } from '@/components/TrustScoreMeter';
 
-// Define the Article type matching the fields we need
-interface ArticleSubmission {
-  headline: string;
-  content: string;
-  category: string;
-  source?: string | null;
-  article_type: 'Factual' | 'Reporting/Rumor' | '';
-}
-
-const parseAiContent = (content: string | undefined | null): { sections: { title: string; content: string }[], trustScore: number | null } => {
-  if (!content) {
-    return { sections: [], trustScore: null };
-  }
-
-  // Split content by the markdown headers (### or ##)
-  const rawSections = content.split(/###? /).slice(1); // slice(1) to remove anything before the first header
-
-  const sections = rawSections.map(sectionText => {
-    const [title, ...contentParts] = sectionText.split('\n');
-    return {
-      title: title.trim(),
-      content: contentParts.join('\n').trim(),
-    };
-  });
-
-  const trustScoreMatch = content.match(/Trust Score: (\d+)\/100/);
-  const trustScore = trustScoreMatch ? parseInt(trustScoreMatch[1], 10) : null;
-
-  return { sections, trustScore };
+const parseTrustScore = (content: string | undefined | null): number | null => {
+    if (!content) return null;
+    const trustScoreMatch = content.match(/Trust Score: (\d+)\/100/);
+    return trustScoreMatch ? parseInt(trustScoreMatch[1], 10) : null;
 };
 
 const SubmitPage = () => {
@@ -45,23 +19,13 @@ const SubmitPage = () => {
   const [content, setContent] = useState('');
   const [sources, setSources] = useState('');
 
-  // --- Process parsed data for rendering ---
   const aiResponse = verificationResult?.choices?.[0]?.message?.content;
-  const { sections, trustScore } = parseAiContent(aiResponse);
-
-  // Separate the citations section from the rest of the report
-  const citationSection = sections.find(s => s.title.includes('Citations Used by AI'));
-  const regularSections = sections.filter(s => !s.title.includes('Citations Used by AI') && !s.title.includes('Final Trust Score'));
-
-  // Extract URLs from the citation section content
-  const citationUrls = citationSection?.content
-    ? citationSection.content.match(/https?:\/\/\S+/g) || []
-    : [];
+  const trustScore = parseTrustScore(aiResponse);
 
   const handleAnalyze = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setVerificationResult(null); // Clear previous results
+    setVerificationResult(null);
     try {
       const result = await verifyArticle({ headline, content, sources });
       setVerificationResult(result);
@@ -135,24 +99,9 @@ const SubmitPage = () => {
           <h2 className={styles.resultsTitle}>AI Analysis</h2>
           <div className={styles.resultsWrapper}>
             <div className={styles.reportContainer}>
-              {regularSections.map((section, index) => (
-                <div key={index} className={styles.reportCard}>
-                  <h4 className={styles.reportCardTitle}>{section.title.replace(/^\d+\.\s*/, '')}</h4>
-                  <ReactMarkdown>
-                    {section.content}
-                  </ReactMarkdown>
-                </div>
-              ))}
-              {citationUrls.length > 0 && (
-                <div className={styles.reportCard}>
-                  <h4 className={styles.reportCardTitle}>Citations Used by AI</h4>
-                  <ol className={styles.citationsList}>
-                    {citationUrls.map((url, index) => (
-                      <CitationItem key={index} url={url} />
-                    ))}
-                  </ol>
-                </div>
-              )}
+              <ReactMarkdown className={styles.markdownContent}>
+                {aiResponse}
+              </ReactMarkdown>
             </div>
             <div className={styles.trustScoreContainer}>
               {trustScore !== null && <TrustScoreMeter score={trustScore} />}
