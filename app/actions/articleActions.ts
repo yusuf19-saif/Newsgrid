@@ -49,26 +49,6 @@ Your response MUST be a single markdown document. It must contain every single o
 **CRITICAL INSTRUCTION:** Your entire response must be the markdown report. Do not add any conversational text before or after. Generate all seven sections. An incomplete report is a failed task.`;
 
     const { text } = await generateText({
-        model: perplexity('llama-3-sonar-large-32k-online'),
+        model: perplexity('sonar-large-online'),
         system: systemPrompt,
-        prompt: `Here is the article to analyze:\n\n**Headline:** ${headline}\n\n**Content:**\n${content}\n\n**User-Provided Sources:**\n${sources}`,
-    });
-
-    // The new library returns the text directly, so we need to wrap it
-    // to match the structure the client-side component expects.
-    return {
-      choices: [{
-        message: {
-          content: text
-        }
-      }]
-    };
-  } catch (error) {
-    console.error('Error verifying article with Perplexity:', error);
-    // Return a structured error so the client can handle it
-    return {
-      error: true,
-      message: error instanceof Error ? error.message : 'An unknown error occurred.',
-    };
-  }
-}
+        prompt: `
