@@ -2,8 +2,7 @@
 
 import { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
-import { useFormState, useFormStatus } from 'react-dom';
-import { verifyArticle } from '../actions/articleActions';
+import { verifyArticle } from '@/app/actions/articleActions';
 import styles from './submit.module.css';
 import CitationItem from '@/components/CitationItem';
 import { TrustScoreMeter } from '@/components/TrustScoreMeter';
@@ -22,8 +21,8 @@ const parseAiContent = (content: string | undefined | null): { sections: { title
     return { sections: [], trustScore: null };
   }
 
-  // Split content by the markdown headers (###)
-  const rawSections = content.split('### ').slice(1); // slice(1) to remove anything before the first header
+  // Split content by the markdown headers (### or ##)
+  const rawSections = content.split(/###? /).slice(1); // slice(1) to remove anything before the first header
 
   const sections = rawSections.map(sectionText => {
     const [title, ...contentParts] = sectionText.split('\n');
@@ -68,7 +67,7 @@ const SubmitPage = () => {
       setVerificationResult(result);
     } catch (error) {
       console.error('Error verifying article:', error);
-      // You might want to set an error state here
+      setVerificationResult({ error: true, message: 'An unexpected error occurred.' });
     } finally {
       setIsLoading(false);
     }
@@ -131,41 +130,42 @@ const SubmitPage = () => {
         </div>
       )}
 
-      {verificationResult && (
+      {verificationResult && !verificationResult.error && (
         <div className={styles.resultsContainer}>
           <h2 className={styles.resultsTitle}>AI Analysis</h2>
           <div className={styles.resultsWrapper}>
-          <div className={styles.reportContainer}>
-            {regularSections.map((section, index) => (
-              <div key={index} className={styles.reportCard}>
-                <h4 className={styles.reportCardTitle}>{section.title.replace(/^\d+\.\s*/, '')}</h4>
-                <ReactMarkdown
-                  components={{
-                    p: ({ node, ...props }) => <p style={{ margin: 0, padding: 0 }} {...props} />,
-                  }}
-                >
-                  {section.content}
-                </ReactMarkdown>
-              </div>
-            ))}
-
-            {/* Custom rendering for the citations section */}
-            {citationUrls.length > 0 && (
-              <div className={styles.reportCard}>
-                <h4 className={styles.reportCardTitle}>Citations Used by AI</h4>
-                <ol className={styles.citationsList}>
-                  {citationUrls.map((url, index) => (
-                    <CitationItem key={index} url={url} />
-                  ))}
-                </ol>
-              </div>
-            )}
-          </div>
+            <div className={styles.reportContainer}>
+              {regularSections.map((section, index) => (
+                <div key={index} className={styles.reportCard}>
+                  <h4 className={styles.reportCardTitle}>{section.title.replace(/^\d+\.\s*/, '')}</h4>
+                  <ReactMarkdown>
+                    {section.content}
+                  </ReactMarkdown>
+                </div>
+              ))}
+              {citationUrls.length > 0 && (
+                <div className={styles.reportCard}>
+                  <h4 className={styles.reportCardTitle}>Citations Used by AI</h4>
+                  <ol className={styles.citationsList}>
+                    {citationUrls.map((url, index) => (
+                      <CitationItem key={index} url={url} />
+                    ))}
+                  </ol>
+                </div>
+              )}
+            </div>
             <div className={styles.trustScoreContainer}>
               {trustScore !== null && <TrustScoreMeter score={trustScore} />}
             </div>
           </div>
         </div>
+      )}
+
+      {verificationResult?.error && (
+         <div className={styles.errorContainer}>
+            <h3 className={styles.errorTitle}>An Error Occurred</h3>
+            <p>{verificationResult.message}</p>
+         </div>
       )}
     </div>
   );
