@@ -16,14 +16,15 @@ const dummyArticles: Article[] = [
 
 // Define the expected shape of searchParams
 interface SearchPageProps {
-  searchParams?: { // searchParams might not exist
+  searchParams?: Promise<{ // searchParams is now a Promise
     q?: string; // The 'q' parameter might not exist
-  };
+  }>;
 }
 
 // Pages in App Router receive searchParams as a prop
-export default function SearchPage({ searchParams }: SearchPageProps) {
-  const query = searchParams?.q || ''; // Get query 'q' or default to empty string
+export default async function SearchPage({ searchParams }: SearchPageProps) {
+  const params = await searchParams; // Await the searchParams
+  const query = params?.q || ''; // Get query 'q' or default to empty string
 
   // Simple search filter (case-insensitive check in headline or excerpt)
   const filteredArticles = query
