@@ -9,9 +9,9 @@ interface RouteParams {
 // The handler receives params containing the dynamic route segments
 export async function GET(
   request: Request, // First argument is always request
-  { params }: { params: RouteParams } // Second argument contains params
+  { params }: { params: Promise<{ slug: string }> } // Second argument contains params, now as a Promise
 ) {
-  const { slug } = params; // Extract the slug
+  const { slug } = await params; // Extract the slug after awaiting
 
   if (!slug) {
     return NextResponse.json({ error: 'Slug parameter is required' }, { status: 400 });
