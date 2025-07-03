@@ -2,74 +2,155 @@
 
 import { perplexity } from '@ai-sdk/perplexity';
 import { generateText } from 'ai';
+import { type Source } from '@/types'; // Import the new Source type
 
 interface VerifyArticleParams {
   headline: string;
   content: string;
-  sources: string;
+  sources: Source[]; // Source type now includes status and reason
+  lastUpdated?: string; // Add lastUpdated to the params
 }
+
+type SearchResult = {
+  title: string;
+  url: string;
+};
 
 // Define the explicit return types for our function
 type VerificationSuccess = {
-  choices: { message: { content: string } }[];
+  text: string;
+  searchResults?: SearchResult[];
   error?: undefined;
   message?: undefined;
 };
+
 type VerificationError = {
   error: true;
   message: string;
 };
 type VerificationResult = VerificationSuccess | VerificationError;
 
-export async function verifyArticle({ headline, content, sources }: VerifyArticleParams): Promise<VerificationResult> {
+export async function verifyArticle({ headline, content, sources, lastUpdated }: VerifyArticleParams): Promise<VerificationResult> {
   try {
-    // The detailed system prompt we refined
-    const systemPrompt = `You are a professional fact-checker and editor. Your task is to generate a structured analysis report based on a user-submitted news article.
-The user will provide a headline, the article content, and a list of sources.
+    const systemPrompt = `You are an AI fact-checking assistant. Your task is to analyze a news article and output a credibility report using the exact structure below. Do not deviate.
 
-Your response MUST be a single markdown document. It must contain every single one of the following sections, in this exact order. Do not skip or combine any sections.
+---
 
-### 1. Headline Analysis
-- Analyze the user's headline. Is it relevant to the article's content?
-- Is it clickbait, misleading, or emotionally charged?
-- Provide a clear verdict on the headline's quality.
+⏰ **Article Freshness**
+"This article is over X days old. Information may be outdated. Consider revising."
+(Auto-calculate based on article date. If recent, omit this section.)
 
-### 2. Source Relevance Analysis
-- This is a critical step. Scrutinize the user-provided sources.
-- For each source URL provided by the user, determine if its topic is directly relevant to the main subject of the article content.
-- State clearly whether the sources are relevant or irrelevant. If they are irrelevant, this should heavily penalize the trust score.
+---
 
-### 3. Factual Accuracy & Cross-Verification
-- If (and only if) the user's sources were relevant, briefly check if the article's claims are supported by them.
-- Perform your own independent research using your knowledge and search capabilities to find high-quality, independent sources to verify the article's main claims.
-- State whether the article is factually accurate based on your research.
+🔍 **1. Headline Analysis**
+**Headline:** "{insert headline}"
+**Assessment:** {Accurate / Somewhat Misleading / Misleading}
+**Explanation:** Explain if the headline is sensational, vague, or accurate.
 
-### 4. Tone and Bias Analysis
-- Analyze the language of the article. Is it neutral and objective?
-- Does it use loaded words or show a clear bias for or against a particular viewpoint?
+---
 
-### 5. Suggestions for Improvement
-- Provide a bulleted list of actionable suggestions for the author to improve the article's credibility.
+🧩 **2. Claim Extraction**
+| # | Claim | Type |
+|---|-------|------|
+| 1 | {Claim 1} | {Factual / Statistical / Causal / etc.} |
+(Extract 3-6 major, verifiable claims.)
 
-### 6. Final Trust Score
-- Based on all the factors above, provide a final "Trust Score" on a scale from 0 to 100. Be strict. Irrelevant headlines or sources should result in a very low score.
-- **The trust score must be on a new line and formatted exactly as: Trust Score: [score]/100**
+---
 
-**CRITICAL INSTRUCTION:** Your entire response must be the markdown report. Do not add any conversational text before or after. Generate all six sections. An incomplete report is a failed task.`;
+🔗 **3. Source Verification**
+**Validation Rules:**
+- For each source, I will provide a 'Status'. You MUST use that status.
+- Invalid sources MUST be excluded from claim support and scoring.
+- List each source with its full URL and the provided status.
 
-    const { text } = await generateText({
-        model: perplexity('sonar-large-32k-online'),
+For each user-provided source:
+**[#] {Full URL or File Name}**
+**Status:** {Use the status I provide below}
+**Relevance:** {Assess as Relevant, Irrelevant, or Partially Relevant}
+**Supports:** {State which claim(s) it supports or "None"}
+
+---
+
+✅ **Claim-by-Claim Support**
+(Reference only valid sources using [1], [2], etc.)
+| Claim # | Supported? | Source(s) | Notes |
+|---------|------------|-----------|-------|
+| 1 | Yes / No / Partial | [1], [2] | Explain briefly |
+
+---
+
+📊 **4. Trust Score Breakdown**
+(Only count valid and reachable sources when scoring.)
+| Category | Score (out of) | Rationale |
+|----------|-------|-----------|
+| Headline Accuracy | 20 | ... |
+| Source Quality | 20 | ... |
+| Claim Support | 30 | ... |
+| Tone & Bias | 10 | ... |
+| Structure & Clarity | 10 | ... |
+| Bonus | 10 | (Primary sources, data, etc.) |
+**Total Trust Score** | **/100** |
+
+---
+
+💬 **5. Suggestions for Improvement**
+• Add verifiable sources for unsupported claims.
+• Replace broken or irrelevant sources.
+• Include official quotes or citations.
+
+---
+
+🧾 **6. Final Summary**
+Summarize credibility. Note if claims are unsupported.
+**If sources were excluded due to being invalid, add this note:** "Note: One or more user-provided sources were excluded from verification because they were invalid or irrelevant."
+End with:
+**Trust Score: X/100**
+
+---
+
+📚 **References Used**
+List all sources referenced in [bracket] format.
+Label invalid sources clearly:
+[X] URL - Invalid (Page not found)
+[X] File - Private PDF – Not publicly verifiable
+[X] URL - Irrelevant`;
+
+    // Pass the status from our API check directly to the AI for its consideration
+    const formattedSources = sources.map((source, index) => {
+      const sourceNumber = index + 1;
+      let sourceInfo = '';
+
+      if (source.type === 'url') {
+        // Use the status passed from the frontend. Default to 'Reachable' if for some reason it's not provided.
+        const status = source.reason ? `Invalid (${source.reason})` : 'Reachable';
+        sourceInfo = `[${sourceNumber}] Public URL: ${source.value}\nStatus provided: ${status}`;
+      } else if (source.type === 'pdf') {
+        const wordCount = source.value.trim().split(/\s+/).length;
+        let statusInfo = "Private PDF – Not publicly verifiable";
+        if (wordCount < 50) {
+          statusInfo = "Unreadable or Empty";
+        }
+        sourceInfo = `[${sourceNumber}] Private File: ${source.name || 'Uploaded PDF'}\nStatus provided: ${statusInfo}\n\n--- PDF Content for Source [${sourceNumber}] ---\n${source.value}\n--- End PDF ---`;
+      }
+      return sourceInfo;
+    }).join('\n\n');
+
+    const daysOld = lastUpdated ? Math.floor((new Date().getTime() - new Date(lastUpdated).getTime()) / (1000 * 60 * 60 * 24)) : 0;
+    const articleAgePreamble = daysOld > 30 ? `Article is ${daysOld} days old.` : 'Article is recent.';
+
+    const result = await generateText({
+        model: perplexity('sonar-pro'),
         system: systemPrompt,
-        prompt: `Here is the article to analyze:\n\n**Headline:** ${headline}\n\n**Content:**\n${content}\n\n**User-Provided Sources:**\n${sources}`,
+        prompt: `Analyze the following article. ${articleAgePreamble}\n\n**Headline:** ${headline}\n\n**Content:**\n${content}\n\n**User-Provided Sources:**\n${formattedSources}`,
     });
 
+    const searchResults = result.rawResponse?.choices[0]?.search_results;
+
     return {
-      choices: [{
-        message: {
-          content: text
-        }
-      }]
+      text: result.text,
+      searchResults: searchResults,
     };
+
   } catch (error) {
     console.error('Error verifying article with Perplexity:', error);
     return {

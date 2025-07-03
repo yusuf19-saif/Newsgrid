@@ -50,7 +50,8 @@ async function getArticlesByAuthor(authorId: string): Promise<Article[]> {
         headline,
         content,
         excerpt,
-        source,
+        sources,
+        trust_score,
         category,
         slug,
         created_at,
@@ -59,10 +60,12 @@ async function getArticlesByAuthor(authorId: string): Promise<Article[]> {
         profiles ( full_name ) 
       `)
       .eq('author_id', authorId)
-      .eq('status', 'Published') // Only show published articles
+      // .eq('status', 'Published') // REMOVED: Show all statuses for the author's own profile
       .order('created_at', { ascending: false });
 
     if (error) {
+      // The console.error here was logging an empty object.
+      // Let's make it more descriptive by logging the actual error.
       console.error(`Error fetching articles for author ${authorId}:`, error);
       return [];
     }

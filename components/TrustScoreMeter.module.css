@@ -1,17 +1,15 @@
 .meterContainer {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
+  display: grid;
+  place-items: center;
   width: 120px;
-  height: 120px;
+  /* Let height be determined by content + gap */
+  gap: 0.5rem; /* Space between the meter and the label */
 }
 
 .meterSvg {
-  position: absolute;
-  top: 0;
-  left: 0;
+  /* SVG and Score text will be in the same grid cell */
+  grid-row: 1 / 2;
+  grid-column: 1 / 2;
   transform: rotate(-90deg); /* Start from the top */
 }
 
@@ -20,29 +18,32 @@
 }
 
 .scoreText {
+  /* SVG and Score text will be in the same grid cell */
+  grid-row: 1 / 2;
+  grid-column: 1 / 2;
   display: flex;
-  align-items: flex-start; /* Align to the top for better control */
-  justify-content: center;
+  align-items: center; /* Vertically center */
+  justify-content: center; /* Horizontally center */
   color: var(--text-primary);
-  line-height: 1; /* Add this for tight alignment */
+  line-height: 1;
 }
 
 .scoreText strong {
-  font-size: 2.5rem;
+  font-size: 1.6rem; /* Further reduced size */
   font-weight: 700;
 }
 
 .scoreText span {
-  font-size: 1rem;
+  font-size: 0.7rem; /* Further reduced size */
   font-weight: 500;
   color: var(--text-secondary);
-  /* Nudge the text for better visual alignment */
-  margin-left: 4px;
-  margin-top: 0.25rem; 
+  margin-left: 2px;
+  padding-bottom: 4px; /* Adjusted for new font size */
 }
 
 .label {
-  margin-top: 0.75rem; /* Add a bit more space above the label */
+  /* This will be in the second row of the grid */
+  grid-row: 2 / 3;
   font-weight: 600;
   font-size: 1rem;
   color: var(--text-secondary);

@@ -19,9 +19,11 @@
   --link-primary: #007bff;
   --link-hover: #0056b3;
 
-  --button-primary-bg: #007bff;
+  --button-primary-bg: #198754; /* Green */
   --button-primary-text: #ffffff;
-  --button-primary-hover-bg: #0056b3;
+  --button-primary-hover-bg: #157347; /* Darker Green */
+  --button-primary-border: #198754; /* Green */
+  --button-primary-border-hover: #146c43; /* Darker Green */
 
   --button-secondary-bg: #6c757d;
   --button-secondary-text: #ffffff;
@@ -77,9 +79,11 @@ html[data-theme="dark"] {
   --link-primary: #3b82f6;            /* A pleasant, modern blue */
   --link-hover: #60a5fa;              /* A lighter blue for hover */
 
-  --button-primary-bg: var(--link-primary);
+  --button-primary-bg: #22c55e; /* Brighter Green for dark mode */
   --button-primary-text: #ffffff;
-  --button-primary-hover-bg: var(--link-hover);
+  --button-primary-hover-bg: #16a34a; /* Slightly less bright green */
+  --button-primary-border: #22c55e;
+  --button-primary-border-hover: #15803d;
 
   --button-secondary-bg: #333333;
   --button-secondary-text: var(--text-primary);
@@ -246,32 +250,4 @@ textarea:-ms-input-placeholder {
 input::-ms-input-placeholder, /* Microsoft Edge */
 textarea::-ms-input-placeholder {
   color: var(--input-placeholder-text);
-}
-
-/* General element styling - UPDATE TO USE CHOSEN VARIABLES */
-h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-heading);
-  font-weight: 700; 
-  color: var(--text-primary); /* UPDATE - was --text-heading which we are removing for simplicity */
-  margin-bottom: 0.6em;
-  line-height: 1.3;
-  transition: color 0.3s ease; /* Add transition */
-}
-h1 { font-size: 2.2rem; }
-h2 { font-size: 1.8rem; }
-h3 { font-size: 1.5rem; }
-
-a {
-  color: var(--link-primary); /* UPDATE - was --primary-accent */
-  text-decoration: none;
-  transition: color 0.3s ease; /* Add transition */
-}
-a:hover {
-  color: var(--link-hover); /* UPDATE - was --primary-accent-hover */
-  text-decoration: underline; 
-}
-
-p {
-  margin-bottom: 1.1rem;
-  /* Color will be inherited from body var(--text-primary) */
 }

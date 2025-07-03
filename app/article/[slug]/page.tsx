@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'; // Import notFound for 404 handling
 import { Article } from '../../../types'; // Adjusted path to use relative path
 import styles from './article.module.css';
 import { createSupabaseServerComponentClient } from '@/lib/supabaseServerComponentClient';
+import { TrustScoreMeter } from '@/components/TrustScoreMeter'; // Corrected: Use named import
 
 // Helper function to format date (can be shared in a utils file later)
 function formatDate(dateString: string | undefined): string {
@@ -28,10 +29,21 @@ export default async function ArticlePage({ params }: { params: ArticlePageParam
   const { slug } = params; // Extract the slug from the params
   const supabase = createSupabaseServerComponentClient();
 
+  // Explicitly select all fields needed, including trust_score
   const { data: article, error } = await supabase
     .from('articles')
     .select(`
-      *,
+      id,
+      headline,
+      content,
+      excerpt,
+      sources,
+      trust_score,
+      category,
+      slug,
+      created_at,
+      status,
+      author_id,
       author:profiles (
         full_name
       )
@@ -54,61 +66,79 @@ export default async function ArticlePage({ params }: { params: ArticlePageParam
   // console.log(`Rendering ArticlePage for slug: ${slug}`); // Add log - keep if helpful
   // If article IS found, render its content
   return (
-    <div className={styles.container}>
-      <article className={styles.articleContent}>
-        {/* Display actual fetched data */}
-        <h1 className={styles.headline}>{articleWithAuthor.headline}</h1>
+    <div className={styles.pageLayout}>
+      <div className={styles.mainContent}>
+        <article className={styles.articleContent}>
+          {/* Display actual fetched data */}
+          <h1 className={styles.headline}>{articleWithAuthor.headline}</h1>
 
-        <div className={styles.meta}>
-          {/* Display Author Name as a Link if author_id exists */}
-          {articleWithAuthor.author_id && articleWithAuthor.author_full_name && articleWithAuthor.author_full_name !== 'Anonymous' ? (
+          <div className={styles.meta}>
+            {/* Display Author Name as a Link if author_id exists */}
+            {articleWithAuthor.author_id && articleWithAuthor.author_full_name && articleWithAuthor.author_full_name !== 'Anonymous' ? (
+              <span>
+                By: <Link href={`/profile/${articleWithAuthor.author_id}`} className={styles.authorLink}>{articleWithAuthor.author_full_name}</Link>
+              </span>
+            ) : articleWithAuthor.author_full_name && articleWithAuthor.author_full_name !== 'Anonymous' ? (
+              <span>By: {articleWithAuthor.author_full_name}</span>
+            ) : null} {/* Or a fallback for "Anonymous" if desired */}
             <span>
-              By: <Link href={`/profile/${articleWithAuthor.author_id}`} className={styles.authorLink}>{articleWithAuthor.author_full_name}</Link>
+              Category: <Link href={`/category/${encodeURIComponent(articleWithAuthor.category.toLowerCase())}`} className={styles.categoryLink}>{articleWithAuthor.category}</Link>
             </span>
-          ) : articleWithAuthor.author_full_name && articleWithAuthor.author_full_name !== 'Anonymous' ? (
-            <span>By: {articleWithAuthor.author_full_name}</span>
-          ) : null} {/* Or a fallback for "Anonymous" if desired */}
-          {/* Link to category page */}
-          <Link href={`/category/${encodeURIComponent(articleWithAuthor.category.toLowerCase())}`}>
-              Category: {articleWithAuthor.category}
-          </Link>
-          <span>Posted: {formatDate(articleWithAuthor.created_at)}</span>
-        </div>
+            <span>Posted: {formatDate(articleWithAuthor.created_at)}</span>
+          </div>
 
-        {/* Display the full article content */}
-        {/* Warning: Rendering raw HTML from user input is dangerous (XSS).
-            If 'content' could contain HTML, use a sanitizer library (like DOMPurify)
-            or render it as plain text. For now, assuming plain text or trusted content. */}
-        <div className={styles.body}>
-          {/* Render content - split into paragraphs if content has line breaks */}
-          {articleWithAuthor.content && articleWithAuthor.content.split('\n').map((paragraph: string, index: number) => (
-            paragraph.trim() ? <p key={index}>{paragraph}</p> : null
-          ))}
-        </div>
+          {/* Display the full article content */}
+          {/* Warning: Rendering raw HTML from user input is dangerous (XSS).
+              If 'content' could contain HTML, use a sanitizer library (like DOMPurify)
+              or render it as plain text. For now, assuming plain text or trusted content. */}
+          <div className={styles.body}>
+            {/* Render content - split into paragraphs if content has line breaks */}
+            {articleWithAuthor.content && articleWithAuthor.content.split('\n').map((paragraph: string, index: number) => (
+              paragraph.trim() ? <p key={index}>{paragraph}</p> : null
+            ))}
+          </div>
 
-        {/* NEW: Sources section at the bottom */}
-        {articleWithAuthor.source && (
-          <div className={styles.sourcesSection}>
-            <h3 className={styles.sourcesTitle}>Sources</h3>
-            <ol className={styles.sourcesList}>
-              {/* Split sources by comma or newline, then trim whitespace */}
-              {articleWithAuthor.source.split(/[\n,]+/).map((source: string, index: number) => {
-                const trimmedSource = source.trim();
-                if (trimmedSource) {
-                  return (
-                    <li key={index}>
-                      <a href={trimmedSource} target="_blank" rel="noopener noreferrer" className={styles.sourceLink}>
-                        {trimmedSource}
-                      </a>
-                    </li>
-                  );
-                }
-                return null;
-              })}
-            </ol>
+          {/* Updated Sources section */}
+          {Array.isArray(articleWithAuthor.sources) && articleWithAuthor.sources.length > 0 && (
+            <div className={styles.sourcesSection}>
+              <h3 className={styles.sourcesTitle}>Sources</h3>
+              <ol className={styles.sourcesList}>
+                {articleWithAuthor.sources.map((source, index) => {
+                  if (!source || !source.value) return null;
+
+                  if (source.type === 'url') {
+                    return (
+                      <li key={index}>
+                        <a href={source.value} target="_blank" rel="noopener noreferrer" className={styles.sourceLink}>
+                          {source.value}
+                        </a>
+                      </li>
+                    );
+                  } else if (source.type === 'pdf') {
+                    // For PDFs, we just acknowledge the source since we can't directly link to the user's local file.
+                    // In a more advanced implementation, you would upload the PDF to storage and link to it there.
+                    return (
+                      <li key={index}>
+                        Uploaded PDF: {source.value} {/* Displaying the original filename */}
+                      </li>
+                    );
+                  }
+                  return null;
+                })}
+              </ol>
+            </div>
+          )}
+        </article>
+      </div>
+
+      <aside className={styles.trustScoreWrapper}>
+        {articleWithAuthor.trust_score !== null && typeof articleWithAuthor.trust_score === 'number' && (
+          <div>
+            <h3>Credibility Score</h3>
+            <TrustScoreMeter score={articleWithAuthor.trust_score} />
           </div>
         )}
-      </article>
+      </aside>
     </div>
   );
 }

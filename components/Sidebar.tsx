@@ -1,35 +1,14 @@
 import Link from 'next/link';
 import styles from './Sidebar.module.css';
-import { cookies } from 'next/headers';
-import { createServerClient, type CookieOptions } from '@supabase/ssr';
-import { checkUserRole } from '@/lib/authUtils'; // Adjust path if needed
+import { type User } from '@supabase/supabase-js';
 
-export default async function Sidebar() {
-  const cookieStore = cookies();
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value;
-        },
-        // No need for set/remove in a read-only component like this for auth state
-      },
-    }
-  );
+type SidebarProps = {
+  user: User | null;
+  isAdmin: boolean;
+};
 
-  const { data: { user } } = await supabase.auth.getUser();
-  let isAdmin = false;
-  if (user) {
-    isAdmin = await checkUserRole(user.id, 'admin');
-  }
-
+export default function Sidebar({ user, isAdmin }: SidebarProps) {
   if (!user) {
-    // If no user is logged in, perhaps don't render the sidebar 
-    // or render a minimal version. For now, let's not render it if no user.
-    // This depends on how you want your layout to behave for logged-out users.
-    // Alternatively, the layout itself could decide not to include the Sidebar.
     return null; 
   }
 
@@ -38,7 +17,7 @@ export default async function Sidebar() {
       <nav>
         <ul>
           <li>
-            <Link href="/profile">Profile</Link>
+            <Link href={`/profile/${user.id}`}>Profile</Link>
           </li>
           {isAdmin && (
             <li>

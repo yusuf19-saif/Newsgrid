@@ -7,6 +7,11 @@ import "./globals.css";
 import { ThemeProvider } from "@/contexts/ThemeContext"; // Import ThemeProvider
 import styles from './layout.module.css'; // Import the new CSS module
 
+// New imports for Supabase auth
+import { cookies } from 'next/headers';
+import { createServerClient } from '@supabase/ssr';
+import { checkUserRole } from '@/lib/authUtils';
+
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
@@ -14,11 +19,28 @@ export const metadata: Metadata = {
   description: "Open Platform for Factual News",
 };
 
-export default function RootLayout({
+// Layout is now an async function
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const cookieStore = cookies();
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return cookieStore.get(name)?.value;
+        },
+      },
+    }
+  );
+
+  const { data: { user } } = await supabase.auth.getUser();
+  const isAdmin = user ? await checkUserRole(user.id, 'admin') : false;
+
   return (
     <html lang="en">
       <body className={inter.className}>
@@ -32,7 +54,7 @@ export default function RootLayout({
                 Or, you could fetch user here and conditionally render Sidebar.
                 For simplicity now, Sidebar handles its own visibility based on user session.
               */}
-              <Sidebar /> {/* Add the Sidebar component */}
+              <Sidebar user={user} isAdmin={isAdmin} /> {/* Add the Sidebar component */}
               <main className={styles.pageContent}>
                 {children} {/* This is where your page content will go */}
                 <Footer /> {/* Footer is now at the end of the scrollable content */}
