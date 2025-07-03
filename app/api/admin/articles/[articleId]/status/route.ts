@@ -1,11 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { supabaseAdmin } from '../../../../../../lib/supabaseServer'; // Adjust path
 import { checkUserRole } from '../../../../../../lib/authUtils';   // Adjust path
 
 export async function PUT(
-  request: NextRequest,
+  request: Request,
   { params }: { params: { articleId: string } }
 ) {
   const articleId = params.articleId;
