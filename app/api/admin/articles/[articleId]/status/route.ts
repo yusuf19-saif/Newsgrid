@@ -6,9 +6,9 @@ import { checkUserRole } from '../../../../../../lib/authUtils';   // Adjust pat
 
 export async function PUT(
   request: Request,
-  { params }: { params: { articleId: string } }
+  { params }: { params: Promise<{ articleId: string }> }
 ) {
-  const articleId = params.articleId;
+  const { articleId } = await params;
   const cookieStore = cookies();
   const supabaseUserClient = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
