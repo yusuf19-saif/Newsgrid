@@ -80,6 +80,7 @@ export default function Header() {
     { href: "/categories", label: "Categories" },
     { href: "/about", label: "About" },
     { href: "/guidelines", label: "Guidelines" },
+    { href: "/trustscore", label: "Trustscore" },
   ];
 
   if (isLoadingUser) {
