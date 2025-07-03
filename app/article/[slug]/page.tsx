@@ -25,8 +25,8 @@ interface ArticlePageParams {
 
 // The component receives params containing the dynamic route segments
 // Make the Page component async to use await for data fetching
-export default async function ArticlePage({ params }: { params: ArticlePageParams }) {
-  const { slug } = params; // Extract the slug from the params
+export default async function ArticlePage({ params }: { params: Promise<ArticlePageParams> }) {
+  const { slug } = await params; // Extract the slug after awaiting params
   const supabase = createSupabaseServerComponentClient();
 
   // Explicitly select all fields needed, including trust_score
