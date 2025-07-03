@@ -92,8 +92,8 @@ async function getArticlesByAuthor(authorId: string): Promise<Article[]> {
   }
 }
 
-export default async function UserProfilePage({ params }: { params: ProfilePageParams }) {
-  const { userId } = params;
+export default async function UserProfilePage({ params }: { params: Promise<ProfilePageParams> }) {
+  const { userId } = await params;
   
   // Fetch profile and articles in parallel
   const [userProfile, articlesByAuthor] = await Promise.all([

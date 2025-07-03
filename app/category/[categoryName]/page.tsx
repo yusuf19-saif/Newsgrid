@@ -2,10 +2,12 @@ import ArticlePreview from '@/components/ArticlePreview'; // Adjust path if need
 import { Article } from '@/types'; // Adjust path if needed
 import styles from './category.module.css'; // We'll create this next
 
+interface CategoryPageParams {
+  categoryName: string; // Matches the folder name [categoryName]
+}
+
 interface CategoryPageProps {
-  params: {
-    categoryName: string; // Matches the folder name [categoryName]
-  };
+  params: Promise<CategoryPageParams>;
   // searchParams could be used if we were to pass additional query params to this page
 }
 
@@ -39,9 +41,10 @@ function capitalizeFirstLetter(string: string) {
 }
 
 export default async function CategoryPage({ params }: CategoryPageProps) {
+  const { categoryName } = await params;
   // Decode the category name from the URL (handles spaces %20 etc.)
   // The API will handle case-insensitivity with .ilike(), so we send it as is from the URL
-  const categoryNameFromUrl = decodeURIComponent(params.categoryName);
+  const categoryNameFromUrl = decodeURIComponent(categoryName);
 
   const articles = await getArticlesByCategory(categoryNameFromUrl);
 
