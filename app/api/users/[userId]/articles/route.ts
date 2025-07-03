@@ -3,9 +3,9 @@ import { supabaseAdmin } from '../../../../../lib/supabaseServer'; // Adjust pat
 
 export async function GET(
   request: Request,
-  { params }: { params: { userId: string } }
+  { params }: { params: Promise<{ userId: string }> }
 ) {
-  const userId = params.userId;
+  const { userId } = await params;
 
   if (!userId) {
     return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
