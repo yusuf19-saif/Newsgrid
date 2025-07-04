@@ -144,7 +144,13 @@ Label invalid sources clearly:
         prompt: `Analyze the following article. ${articleAgePreamble}\n\n**Headline:** ${headline}\n\n**Content:**\n${content}\n\n**User-Provided Sources:**\n${formattedSources}`,
     });
 
-    const searchResults = result.response?.choices[0]?.search_results;
+    const searchResults = result.sources
+      ?.filter(s => s.sourceType === 'url')
+      .map(s => ({
+        url: s.url,
+        // The title is optional on the source, so we provide a fallback.
+        title: s.sourceType === 'url' ? s.title ?? s.url : 'Unknown Source',
+      }));
 
     return {
       text: result.text,
