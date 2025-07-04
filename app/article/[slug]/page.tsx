@@ -27,7 +27,7 @@ interface ArticlePageParams {
 // Make the Page component async to use await for data fetching
 export default async function ArticlePage({ params }: { params: Promise<ArticlePageParams> }) {
   const { slug } = await params; // Extract the slug after awaiting params
-  const supabase = createSupabaseServerComponentClient();
+  const supabase = await createSupabaseServerComponentClient();
 
   // Explicitly select all fields needed, including trust_score
   const { data: article, error } = await supabase
