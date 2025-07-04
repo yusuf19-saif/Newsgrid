@@ -57,10 +57,13 @@ export default async function ArticlePage({ params }: { params: Promise<ArticleP
     notFound();
   }
   
+  // Supabase can return a joined table as an array, so we handle this by taking the first element.
+  const author = Array.isArray(article.author) ? article.author[0] : article.author;
+  
   // Map the author data to the expected property
   const articleWithAuthor = {
       ...article,
-      author_full_name: article.author?.full_name || 'Anonymous'
+      author_full_name: author?.full_name || 'Anonymous'
   };
 
   // console.log(`Rendering ArticlePage for slug: ${slug}`); // Add log - keep if helpful
