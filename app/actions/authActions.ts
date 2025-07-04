@@ -5,7 +5,7 @@ import { redirect } from 'next/navigation';
 import { createSupabaseServerComponentClient } from '@/lib/supabaseServerComponentClient';
 
 export async function handleSignOut() {
-  const supabaseServerClient = createSupabaseServerComponentClient(); // Handles cookies internally
+  const supabaseServerClient = await createSupabaseServerComponentClient(); // Handles cookies internally
   
   await supabaseServerClient.auth.signOut();
   
