@@ -144,7 +144,7 @@ Label invalid sources clearly:
         prompt: `Analyze the following article. ${articleAgePreamble}\n\n**Headline:** ${headline}\n\n**Content:**\n${content}\n\n**User-Provided Sources:**\n${formattedSources}`,
     });
 
-    const searchResults = result.rawResponse?.choices[0]?.search_results;
+    const searchResults = result.response?.choices[0]?.search_results;
 
     return {
       text: result.text,
