@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../../../lib/supabaseServer'; // Adjust path as needed
 import { cookies } from 'next/headers';
-import { createServerClient } from '../../../../../lib/supabaseServerComponentClient';
 
 export async function GET(
   request: Request,
