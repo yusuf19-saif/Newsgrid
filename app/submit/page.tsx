@@ -10,7 +10,7 @@ export const revalidate = 0;
 export type Category = { category: string };
 
 async function getCategories(): Promise<Category[]> {
-  const supabase = createSupabaseServerComponentClient();
+  const supabase = await createSupabaseServerComponentClient();
   // Call the RPC function instead of querying a table
   const { data, error } = await supabase.rpc('get_distinct_categories');
   
