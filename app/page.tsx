@@ -21,7 +21,7 @@ function formatDate(dateString: string | undefined): string {
 }
 
 async function getArticles(): Promise<Article[]> {
-  const supabase = createSupabaseServerComponentClient();
+  const supabase = await createSupabaseServerComponentClient();
   const { data, error } = await supabase
     .from('articles')
     .select(`
