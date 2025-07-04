@@ -5,7 +5,7 @@ import { supabaseAdmin } from '../../../../lib/supabaseServer'; // For fetching 
 import { checkUserRole } from '../../../../lib/authUtils';   // For checking admin role
 
 export async function GET(request: NextRequest) {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const supabaseUserClient = createServerClient( // To get the current user
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
