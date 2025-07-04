@@ -9,7 +9,7 @@ export async function PUT(
   { params }: { params: Promise<{ articleId: string }> }
 ) {
   const { articleId } = await params;
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const supabaseUserClient = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
