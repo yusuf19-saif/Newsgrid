@@ -1,11 +1,14 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../../../lib/supabaseServer'; // Adjust path as needed
+import { cookies } from 'next/headers';
+import { createServerClient } from '../../../../../lib/supabaseServerComponentClient';
 
 export async function GET(
   request: Request,
-  { params }: { params: Promise<{ userId: string }> }
+  { params }: { params: { userId: string } }
 ) {
-  const { userId } = await params;
+  const userId = params.userId;
+  const cookieStore = await cookies();
 
   if (!userId) {
     return NextResponse.json({ error: 'User ID is required' }, { status: 400 });

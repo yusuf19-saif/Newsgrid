@@ -28,8 +28,8 @@ export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey, {
 // const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 // export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-export const createSupabaseServerClient = () => {
-  const cookieStore = cookies();
+export const createSupabaseServerClient = async () => {
+  const cookieStore = await cookies();
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -50,7 +50,7 @@ export async function checkUserRole(userId: string, roleName: string): Promise<b
   }
 
   // Using the user's client, RLS must be set up on 'user_roles'
-  const supabase = createSupabaseServerClient(); 
+  const supabase = await createSupabaseServerClient(); 
 
   console.log(`Checking role for userId: ${userId}, roleName: ${roleName}`);
 

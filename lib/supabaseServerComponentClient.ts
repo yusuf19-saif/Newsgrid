@@ -6,8 +6,8 @@ import { cookies } from 'next/headers'; // Import cookies
 
 // Function to create a Supabase client for Server Components
 // It reads cookies to determine the user's session server-side
-export const createSupabaseServerComponentClient = () => {
-    const cookieStore = cookies(); // Get cookie store
+export const createSupabaseServerComponentClient = async () => {
+    const cookieStore = await cookies(); // Get cookie store
 
     // Create and return the client
     return createServerClient(

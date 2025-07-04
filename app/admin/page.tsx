@@ -8,12 +8,12 @@ import { checkUserRole } from '@/lib/supabaseServer'; // Assuming this is also f
 import AdminDashboardClient from './AdminDashboardClient'; // Import the new Client Component
 
 export default async function AdminDashboardPage() {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   // Ensure createSupabaseServerClient is correctly set up for server components
   // It might need cookieStore passed, or it might get cookies internally.
   // Based on your previous setup for lib/supabaseServerComponentClient,
   // it likely handles cookies internally. Adjust if your lib/supabaseServer is different.
-  const supabase = createSupabaseServerClient(); 
+  const supabase = await createSupabaseServerClient(); 
 
   const { data: { user }, error: userError } = await supabase.auth.getUser();
 

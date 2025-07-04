@@ -4,7 +4,7 @@ import { cookies } from 'next/headers';
 
 // This function will handle PUT requests to update the profile
 export async function PUT(request: NextRequest) {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, // Using ANON_KEY because RLS will protect the table
