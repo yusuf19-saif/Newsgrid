@@ -4,7 +4,10 @@ export type Source = {
   // 'value' holds the URL string or the extracted text content from a PDF.
   value: string;
   // 'name' is optional, useful for displaying the original filename of a PDF.
-  name?: string; 
+  name?: string;
+  // New: Add status and reason for frontend validation tracking
+  status?: 'valid' | 'invalid' | 'broken' | 'checking';
+  reason?: string;
 };
 
 export interface Article {
