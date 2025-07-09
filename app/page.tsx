@@ -47,6 +47,10 @@ async function getArticles(): Promise<Article[]> {
 }
 
 export default async function HomePage() {
+  const supabase = await createSupabaseServerComponentClient();
+  const { data: { session } } = await supabase.auth.getSession();
+  const userId = session?.user?.id;
+
   const articles = await getArticles();
 
   return (
@@ -54,9 +58,10 @@ export default async function HomePage() {
       <h1 className={styles.title}>Latest News</h1>
       {articles && articles.length > 0 ? (
         <div className={styles.articlesGrid}>
-          {articles.map((article) => (
-            <ArticlePreview key={article.id} article={article} />
-          ))}
+          {articles.map((article) => {
+            const isOwner = article.author_id === userId;
+            return <ArticlePreview key={article.id} article={article} isOwner={isOwner} />;
+          })}
         </div>
       ) : (
         <p>No articles found. Check back later or try submitting one!</p>
