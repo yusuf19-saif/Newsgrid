@@ -8,7 +8,7 @@ import { SupabaseClient } from '@supabase/supabase-js';
 async function getDrafts(supabase: SupabaseClient, userId: string): Promise<Article[]> {
   const { data, error } = await supabase
     .from('articles')
-    .select('id, headline, created_at, excerpt')
+    .select('*') // Select all fields to match the Article type
     .eq('author_id', userId)
     .eq('status', 'draft')
     .order('created_at', { ascending: false });
