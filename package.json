@@ -8,12 +8,15 @@
     "start": "next start",
     "lint": "next lint"
   },
+  "overrides": {
+    "framer-motion": "^11.2.12"
+  },
   "dependencies": {
     "@supabase/ssr": "^0.4.0",
     "@supabase/supabase-js": "^2.44.3",
     "@google/generative-ai": "^0.14.1",
     "ai": "^4.3.16",
-    "framer-motion": "^12.19.2",
+    "framer-motion": "^11.2.12",
     "next": "15.0.0-rc.0",
     "pdfjs-dist": "^4.4.188",
     "react": "19.0.0-rc-f994737d14-20240522",
