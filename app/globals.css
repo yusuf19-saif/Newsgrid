@@ -5,19 +5,19 @@
   --max-width: 1100px;
   --border-radius: 12px;
   /* CHOSEN Light Theme Variables */
-  --background-primary: #ffffff;    /* Main page background */
-  --background-secondary: #f8f9fa;  /* For cards, form containers, header */
-  --background-accent: #e9ecef;     /* Hover states, subtle backgrounds */
+  --background-primary: #f7f7f7; /* Off-white */
+  --background-secondary: #ffffff; /* Pure white for cards/modals */
+  --background-accent: #e5e7eb; /* Light gray for accents */
   
-  --text-primary: #212529;          /* Main text color */
-  --text-secondary: #495057;        /* Subdued text, descriptions, labels */
-  --text-muted: #6c757d;            /* Hint text, footers */
+  --text-primary: #1f2937; /* Dark gray, not pure black */
+  --text-secondary: #4b5563;
+  --text-muted: #6b7280;
   
-  --border-primary: #dee2e6;        /* Primary borders for containers, inputs */
-  --border-secondary: #ced4da;       /* Stronger borders or dividers */
+  --border-primary: #d1d5db;
+  --border-accent: #9ca3af;
 
-  --link-primary: #007bff;
-  --link-hover: #0056b3;
+  --link-primary: #3b82f6;
+  --link-primary-hover: #2563eb;
 
   --button-primary-bg: #198754; /* Green */
   --button-primary-text: #ffffff;
@@ -38,14 +38,15 @@
   --input-text: #495057;
   --input-placeholder-text: #6c757d; /* Added placeholder text color */
 
-  --error-text: #dc3545;
+  --error-text: #991b1b;
   --error-rgb: 220, 53, 69; /* For rgba backgrounds */
-  --success-text: #198754;
+  --success-text: #065f46;
   --success-rgb: 25, 135, 84; /* For rgba backgrounds */
   --info-text: #0dcaf0;
 
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
 
   --input-focus-border-rgb: 0, 123, 255; /* for box-shadow */
 
@@ -60,6 +61,19 @@
   --status-warning-text: #856404;
   --status-danger-bg: #f8d7da;
   --status-danger-text: #721c24;
+
+  /* Success and Error colors */
+  --success-background: #d1fae5;
+  --error-background: #fee2e2;
+
+  /* Consistent border radius and shadows */
+  --border-radius-small: 4px;
+  --border-radius-medium: 8px;
+  --border-radius-large: 16px;
+
+  --accent-primary: #10b981; /* A nice green for primary buttons */
+  --accent-primary-hover: #059669;
+  --accent-primary-transparent: rgba(16, 185, 129, 0.1);
 }
 
 html[data-theme="dark"] {

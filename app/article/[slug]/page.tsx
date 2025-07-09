@@ -29,7 +29,11 @@ export default async function ArticlePage({ params }: { params: Promise<ArticleP
   const { slug } = await params; // Extract the slug after awaiting params
   const supabase = await createSupabaseServerComponentClient();
 
-  // Explicitly select all fields needed, including trust_score
+  // Get the current user's session to check if they are the author
+  const { data: { session } } = await supabase.auth.getSession();
+  const userId = session?.user?.id;
+
+  // Fetch the article by slug, but don't filter by status yet
   const { data: article, error } = await supabase
     .from('articles')
     .select(`
@@ -44,26 +48,36 @@ export default async function ArticlePage({ params }: { params: Promise<ArticleP
       created_at,
       status,
       author_id,
-      author:profiles (
+      profiles (
         full_name
       )
     `)
     .eq('slug', slug)
-    .eq('status', 'Published')
     .single();
 
   if (error || !article) {
     console.error(`Error fetching article with slug ${slug}:`, error);
     notFound();
   }
+
+  const isPublished = article.status === 'Published';
+  const isOwner = article.author_id === userId;
+
+  // If the article is not published and the person viewing it is not the author,
+  // then show a 404 page.
+  if (!isPublished && !isOwner) {
+    notFound();
+  }
   
-  // Supabase can return a joined table as an array, so we handle this by taking the first element.
-  const author = Array.isArray(article.author) ? article.author[0] : article.author;
+  // The join result is now in `article.profiles`. Handle case where it might be null.
+  const authorName = (article.profiles as { full_name: string })?.full_name || 'Anonymous';
   
   // Map the author data to the expected property
   const articleWithAuthor = {
       ...article,
-      author_full_name: author?.full_name || 'Anonymous'
+      author_full_name: authorName,
+      // Make sure profiles is not passed down if you are not using it elsewhere
+      profiles: undefined 
   };
 
   // console.log(`Rendering ArticlePage for slug: ${slug}`); // Add log - keep if helpful
@@ -106,7 +120,7 @@ export default async function ArticlePage({ params }: { params: Promise<ArticleP
             <div className={styles.sourcesSection}>
               <h3 className={styles.sourcesTitle}>Sources</h3>
               <ol className={styles.sourcesList}>
-                {articleWithAuthor.sources.map((source, index) => {
+                {articleWithAuthor.sources.map((source: any, index) => {
                   if (!source || !source.value) return null;
 
                   if (source.type === 'url') {
@@ -118,11 +132,9 @@ export default async function ArticlePage({ params }: { params: Promise<ArticleP
                       </li>
                     );
                   } else if (source.type === 'pdf') {
-                    // For PDFs, we just acknowledge the source since we can't directly link to the user's local file.
-                    // In a more advanced implementation, you would upload the PDF to storage and link to it there.
                     return (
                       <li key={index}>
-                        Uploaded PDF: {source.value} {/* Displaying the original filename */}
+                        Uploaded PDF: {source.name || 'PDF Source'}
                       </li>
                     );
                   }

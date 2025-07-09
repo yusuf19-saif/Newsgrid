@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../../lib/supabaseServer'; // Adjust path if needed
+import { createServerClient } from '@supabase/ssr';
+import { cookies } from 'next/headers';
 
 // Define the expected shape of the params object
 interface RouteParams {
@@ -77,6 +79,125 @@ export async function GET(
 
   } catch (err) {
     console.error(`API Route error for slug "${slug}":`, err);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    return NextResponse.json({ error: 'Internal ServerError' }, { status: 500 });
   }
+}
+
+export async function PUT(
+  request: Request,
+  { params }: { params: Promise<{ slug: string }> }
+) {
+  const { slug } = await params;
+  const cookieStore = await cookies();
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) { return cookieStore.get(name)?.value; },
+      },
+    }
+  );
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized: You must be logged in.' }, { status: 401 });
+  }
+
+  if (!slug) {
+    return NextResponse.json({ error: 'Article slug is required.' }, { status: 400 });
+  }
+
+  try {
+    const { data: article, error: fetchError } = await supabaseAdmin
+      .from('articles')
+      .select('id, author_id')
+      .eq('slug', slug)
+      .single();
+
+    if (fetchError || !article) {
+      return NextResponse.json({ error: 'Article not found.' }, { status: 404 });
+    }
+
+    if (article.author_id !== user.id) {
+      return NextResponse.json({ error: 'Forbidden: You are not the author of this article.' }, { status: 403 });
+    }
+
+    const { status: newStatus } = await request.json();
+
+    if (!newStatus || !['Published', 'pending_review'].includes(newStatus)) {
+      return NextResponse.json({ error: 'Invalid status provided. Must be Published or pending_review.' }, { status: 400 });
+    }
+
+    const { data, error: updateError } = await supabaseAdmin
+      .from('articles')
+      .update({ status: newStatus })
+      .eq('id', article.id)
+      .select()
+      .single();
+    
+    if (updateError) {
+      return NextResponse.json({ error: 'Failed to update article status.' }, { status: 500 });
+    }
+    return NextResponse.json(data, { status: 200 });
+  } catch (error: any) {
+    console.error(`Unexpected error in PUT /api/articles/${slug}:`, error);
+    return NextResponse.json({ error: 'An unexpected error occurred.' }, { status: 500 });
+  }
+}
+
+export async function DELETE(
+    request: Request,
+    { params }: { params: Promise<{ slug: string }> }
+) {
+    const { slug } = await params;
+    const cookieStore = await cookies();
+    const supabase = createServerClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+            cookies: {
+                get(name: string) { return cookieStore.get(name)?.value; },
+            },
+        }
+    );
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+        return NextResponse.json({ error: 'Unauthorized: You must be logged in.' }, { status: 401 });
+    }
+
+    if (!slug) {
+        return NextResponse.json({ error: 'Article slug is required.' }, { status: 400 });
+    }
+
+    try {
+        const { data: article, error: fetchError } = await supabaseAdmin
+            .from('articles')
+            .select('id, author_id')
+            .eq('slug', slug)
+            .single();
+
+        if (fetchError || !article) {
+            return NextResponse.json({ error: 'Article not found.' }, { status: 404 });
+        }
+
+        if (article.author_id !== user.id) {
+            return NextResponse.json({ error: 'Forbidden: You are not the author of this article.' }, { status: 403 });
+        }
+
+        const { error: deleteError } = await supabaseAdmin
+            .from('articles')
+            .delete()
+            .eq('id', article.id);
+
+        if (deleteError) {
+            return NextResponse.json({ error: 'Failed to delete article.' }, { status: 500 });
+        }
+
+        return NextResponse.json({ message: 'Article deleted successfully' }, { status: 200 });
+    } catch (error: any) {
+        console.error(`Unexpected error in DELETE /api/articles/${slug}:`, error);
+        return NextResponse.json({ error: 'An unexpected error occurred.' }, { status: 500 });
+    }
 }

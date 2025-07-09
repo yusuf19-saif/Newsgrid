@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import Header from "@/components/Header"; // Assuming Header is in components
 import Footer from "@/components/Footer"; // Assuming Footer is in components
-import Sidebar from "@/components/Sidebar"; // Import the new Sidebar
+import { Sidebar } from "@/components/Sidebar"; // Changed to a named import
 import "./globals.css";
 import { ThemeProvider } from "@/contexts/ThemeContext"; // Import ThemeProvider
 import styles from './layout.module.css'; // Import the new CSS module
@@ -11,6 +11,8 @@ import styles from './layout.module.css'; // Import the new CSS module
 import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
 import { checkUserRole } from '@/lib/authUtils';
+import { createSupabaseServerComponentClient } from '../lib/supabaseServerComponentClient';
+import { Database } from '../types/supabase';
 
 const inter = Inter({ subsets: ["latin"] });
 

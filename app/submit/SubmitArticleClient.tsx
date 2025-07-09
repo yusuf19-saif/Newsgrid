@@ -1,14 +1,14 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { createSupabaseBrowserClient } from '@/lib/supabaseClient';
 import { verifyArticle } from '@/app/actions/articleActions';
 import styles from './submit.module.css';
 import { TrustScoreMeter } from '@/components/TrustScoreMeter';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { type Source } from '@/types'; // Import our new Source type
+import { type Source, Article } from '@/types';
 
 type Category = {
   category: string;
@@ -20,8 +20,12 @@ type SubmitArticleClientProps = {
 
 const SubmitArticleClient = ({ categories }: SubmitArticleClientProps) => {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const supabase = createSupabaseBrowserClient();
   
+  // State for which article is being edited, if any
+  const [editingArticle, setEditingArticle] = useState<Article | null>(null);
+
   const [headline, setHeadline] = useState('');
   const [content, setContent] = useState('');
   const [articleType, setArticleType] = useState('Factual');
@@ -40,6 +44,7 @@ const SubmitArticleClient = ({ categories }: SubmitArticleClientProps) => {
   const [isParsing, setIsParsing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const [verificationResult, setVerificationResult] = useState<any>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -47,6 +52,37 @@ const SubmitArticleClient = ({ categories }: SubmitArticleClientProps) => {
 
   // State to hold the status of each source link
   const [linkStatuses, setLinkStatuses] = useState<{ [url: string]: { status: 'valid' | 'invalid' | 'broken' | 'checking', reason?: string } }>({});
+
+  useEffect(() => {
+    const draftId = searchParams.get('draftId');
+    if (draftId) {
+      const fetchDraft = async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { data: draft, error: draftError } = await supabase
+          .from('articles')
+          .select('*')
+          .eq('id', draftId)
+          .eq('author_id', user.id)
+          .single();
+
+        if (draftError || !draft) {
+          setError('Could not load the specified draft.');
+          return;
+        }
+
+        setEditingArticle(draft);
+        setHeadline(draft.headline || '');
+        setContent(draft.content || '');
+        setCategory(draft.category || '');
+        setArticleType(draft.article_type || 'Factual');
+        setSources(draft.sources || []);
+      };
+
+      fetchDraft();
+    }
+  }, [searchParams, supabase]);
 
   const checkLinkStatus = async (url: string) => {
     // Prevent re-checking
@@ -123,6 +159,21 @@ const SubmitArticleClient = ({ categories }: SubmitArticleClientProps) => {
     setSources(sources.filter((_, i) => i !== index));
   };
 
+  const getStatusClass = (status: string) => {
+    switch (status) {
+      case 'valid':
+        return styles.validPill;
+      case 'invalid':
+        return styles.invalidPill;
+      case 'broken':
+        return styles.brokenPill;
+      case 'checking':
+        return styles.checkingPill;
+      default:
+        return '';
+    }
+  };
+
   const parseTrustScore = (content: string | undefined | null): number | null => {
     if (!content) return null;
     const trustScoreMatch = content.match(/Trust Score: (\d+)\/100/);
@@ -150,7 +201,40 @@ const SubmitArticleClient = ({ categories }: SubmitArticleClientProps) => {
   const processedAIResponse = aiResponseText 
     ? formatAIResponseWithLinks(aiResponseText, aiSearchResults) 
     : '';
-  const trustScore = parseTrustScore(aiResponseText);
+
+  const parseAIResponse = (text: string) => {
+    const sections: { [key: string]: string } = {};
+    const sectionHeaders = [
+      '⏰ Article Freshness',
+      '🔍 1. Headline Analysis',
+      '🧩 2. Claim Extraction',
+      '🔗 3. Source Verification',
+      '✅ Claim-by-Claim Support',
+      '📊 4. Trust Score Breakdown',
+      '💬 5. Suggestions for Improvement',
+      '🧾 6. Final Summary',
+      '📚 References',
+    ];
+
+    let remainingText = text;
+    for (let i = 0; i < sectionHeaders.length; i++) {
+      const currentHeader = sectionHeaders[i];
+      const nextHeader = i + 1 < sectionHeaders.length ? sectionHeaders[i+1] : null;
+
+      const regex = nextHeader 
+        ? new RegExp(`${currentHeader}([\\s\\S]*?)(?=${nextHeader})`)
+        : new RegExp(`${currentHeader}([\\s\\S]*)`);
+      
+      const match = remainingText.match(regex);
+
+      if (match && match[1]) {
+        sections[currentHeader] = match[1].trim();
+      }
+    }
+    return sections;
+  };
+
+  const parsedResponse = verificationResult ? parseAIResponse(processedAIResponse) : null;
 
   const handleAnalyze = async () => {
     if (!headline || !content) {
@@ -184,219 +268,252 @@ const SubmitArticleClient = ({ categories }: SubmitArticleClientProps) => {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    setError(null);
+  const handleSubmit = async (status: 'draft' | 'pending_review') => {
+    try {
+      setIsSubmitting(true);
+      setError(null);
+      setSuccessMessage(null);
 
-    const { data: { user } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
 
-    if (!user) {
-      setError('You must be logged in to submit an article.');
-      setIsSubmitting(false);
-      return;
-    }
+      if (!session) {
+        throw new Error('You must be logged in to save an article.');
+      }
+      const user = session.user;
 
-    if (!category) {
-        setError('Please select a category.');
-        setIsSubmitting(false);
-        return;
-    }
-
-    const generateSlug = (text: string) => {
-      return text
-        .toLowerCase()
-        .trim()
-        .replace(/\s+/g, '-') // Replace spaces with -
-        .replace(/[^\w-]+/g, '') // Remove all non-word chars
-        .replace(/--+/g, '-'); // Replace multiple - with single -
-    };
-
-    let slug = generateSlug(headline);
-    let isSlugUnique = false;
-    let counter = 2;
-
-    while (!isSlugUnique) {
-      const { data: existingArticle, error: slugError } = await supabase
-        .from('articles')
-        .select('slug')
-        .eq('slug', slug)
-        .single();
-
-      // We expect an error when no row is found, which is what we want.
-      // PostgREST error code PGRST116 means "No rows found".
-      if (slugError && slugError.code !== 'PGRST116') {
-        setError(`Error checking for existing slug: ${slugError.message}`);
-        setIsSubmitting(false);
-        return;
+      if (status === 'pending_review' && (!category || !content.trim() || !headline.trim())) {
+        throw new Error('Headline, content, and category are required to submit for review.');
       }
 
-      if (existingArticle) {
-        // If a slug was found, generate a new one and loop again.
-        slug = `${generateSlug(headline)}-${counter}`;
-        counter++;
-      } else {
-        // If no slug was found (or we got the expected "No rows found" error), the slug is unique.
-        isSlugUnique = true;
-      }
-    }
+      const finalHeadline = headline.trim() || 'Untitled Draft';
+      
+      const generateSlug = (text: string) => text.toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim().replace(/\s+/g, '-').replace(/[^\w-]+/g, '').replace(/--+/g, '-');
+      
+      const slug = generateSlug(finalHeadline);
 
-    const { data, error: submissionError } = await supabase
-      .from('articles')
-      .insert({
-        headline,
-        slug: slug,
+      // THE FIX: The 'source' column was removed, but now we have a 'sources' column.
+      const articleData = {
+        headline: finalHeadline,
         content,
+        category: category || 'Uncategorized',
         author_id: user.id,
-        category: category,
-        article_type: articleType,
-        status: 'Pending',
-        sources: sources,
-        trust_score: trustScore,
-      })
-      .select()
-      .single();
+        status: status,
+        slug: slug,
+        // Add the new fields to be saved to the database
+        trust_score: parseTrustScore(verificationResult?.text),
+        sources: sources, // The sources array from state
+      };
 
-    if (submissionError) {
-      setError(submissionError.message);
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+      const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+      
+      let response;
+
+      if (editingArticle) {
+        response = await fetch(`${supabaseUrl}/rest/v1/articles?id=eq.${editingArticle.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', 'apikey': supabaseKey, 'Authorization': `Bearer ${session.access_token}` },
+          body: JSON.stringify(articleData)
+        });
+      } else {
+        response = await fetch(`${supabaseUrl}/rest/v1/articles`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'apikey': supabaseKey, 'Authorization': `Bearer ${session.access_token}`, 'Prefer': 'return=representation' },
+          body: JSON.stringify(articleData)
+        });
+      }
+
+      if (!response.ok) {
+        const errorBody = await response.json();
+        throw new Error(errorBody.message || `Request failed: ${response.statusText}`);
+      }
+
+      const savedData = await response.json();
+      const savedArticle = Array.isArray(savedData) ? savedData[0] : savedData;
+      
+      if (!savedArticle) {
+        throw new Error('Failed to retrieve saved article data from the server.');
+      }
+      
+      if (status === 'draft') {
+        if (editingArticle) {
+          setSuccessMessage('Draft updated successfully!');
+        } else {
+          setSuccessMessage('Draft saved successfully! The page will now track this draft.');
+          router.replace(`/submit?draftId=${savedArticle.id}`);
+        }
+      } else {
+        setSuccessMessage('Article submitted! You will be redirected.');
+        router.push('/profile');
+      }
+
+      // Clear the success message after 3 seconds
+      setTimeout(() => setSuccessMessage(null), 3000);
+
+    } catch (e: any) {
+      setError(`Error: ${e.message}`);
+    } finally {
       setIsSubmitting(false);
-    } else {
-      router.push(`/profile/${user.id}`);
-      router.refresh();
     }
   };
 
   return (
-    <>
-      <div className={styles.header}>
-        <h1 className={styles.title}>Submit an Article</h1>
-        <p className={styles.description}>
-          Complete the form below to submit your article for review. You can use the AI analysis tool to check your work before submitting.
-        </p>
-      </div>
+    <div className={styles.submitContainer}>
+      <h1 className={styles.title}>{editingArticle ? 'Edit Your Article' : 'Submit an Article'}</h1>
+      
+      {error && <p className={styles.errorBanner}>{error}</p>}
+      {successMessage && <p className={styles.successBanner}>{successMessage}</p>}
+      
+      <form onSubmit={(e) => e.preventDefault()} className={styles.form}>
+        <div className={styles.formGroup}>
+          <label htmlFor="headline" className={styles.label}>Headline</label>
+          <input
+            type="text"
+            id="headline"
+            value={headline}
+            onChange={(e) => setHeadline(e.target.value)}
+            className={styles.input}
+            placeholder="e.g., New Study Reveals Surprising Health Benefits"
+            required
+          />
+        </div>
 
-      <div className={styles.formContainer}>
-        <form onSubmit={handleSubmit} className={styles.form}>
-          <div className={styles.formGroup}>
-            <label htmlFor="headline" className={styles.label}>Headline*</label>
-            <input
-              type="text"
-              id="headline"
-              value={headline}
-              onChange={(e) => setHeadline(e.target.value)}
-              className={styles.input}
-              required
-            />
-          </div>
+        <div className={styles.formGroup}>
+          <label htmlFor="content" className={styles.label}>Content</label>
+          <textarea
+            id="content"
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            className={styles.textarea}
+            placeholder="Write your article here. You can use Markdown for formatting."
+            rows={15}
+            required
+          />
+        </div>
+        
+        <div className={styles.formGroup}>
+          <label htmlFor="category" className={styles.label}>Category</label>
+          <select
+            id="category"
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            className={styles.select}
+          >
+            <option value="">Select a category...</option>
+            {categories.map((c) => (
+              <option key={c.category} value={c.category}>{c.category}</option>
+            ))}
+          </select>
+        </div>
 
-          <div className={styles.formGroup}>
-            <label htmlFor="content" className={styles.label}>Article Content*</label>
-            <textarea
-              id="content"
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              className={styles.textarea}
-              rows={15}
-              required
-            />
-          </div>
-
-          <div className={styles.row}>
-            <div className={`${styles.formGroup} ${styles.flexItem}`}>
-              <label htmlFor="articleType" className={styles.label}>Article Type</label>
-              <select id="articleType" value={articleType} onChange={e => setArticleType(e.target.value)} className={styles.select}>
-                <option value="Factual">Factual News</option>
-                <option value="Opinion">Opinion</option>
-                <option value="Analysis">Analysis</option>
-              </select>
-            </div>
-            <div className={`${styles.formGroup} ${styles.flexItem}`}>
-              <label htmlFor="category" className={styles.label}>Category*</label>
-              <select id="category" value={category} onChange={e => setCategory(e.target.value)} className={styles.select} required>
-                <option value="" disabled>Select a category</option>
-                {categories.map((c) => (
-                  <option key={c.category} value={c.category}>{c.category}</option>
-                ))}
-              </select>
+        <fieldset className={styles.sourcesFieldset}>
+          <legend className={styles.label}>Sources</legend>
+          <div className={styles.sourceInputContainer}>
+            <label htmlFor="new-url" className={styles.label}>Add URL Source</label>
+            <div className={styles.urlInputGroup}>
+              <input
+                type="url"
+                id="new-url"
+                name="new-url"
+                value={newUrl}
+                onChange={(e) => setNewUrl(e.target.value)}
+                placeholder="https://example.com/article"
+                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddUrl(); } }}
+              />
+              {/* Restoring the clean onClick handler */}
+              <button 
+                type="button" 
+                onClick={handleAddUrl} 
+                className={styles.button}
+              >
+                Add URL
+              </button>
             </div>
           </div>
           
-          {/* --- NEW SOURCES UI --- */}
-          <div className={styles.formGroup}>
-            <label className={styles.label}>Sources</label>
-            <div className={styles.sourceList}>
-              {sources.map((source, index) => (
-                <div key={index} className={styles.sourceItem}>
-                  <span className={styles.sourceIcon}>{source.type === 'url' ? '🔗' : '📄'}</span>
-                  <span className={styles.sourceValue}>{source.type === 'url' ? source.value : source.name}</span>
-                  
-                  {/* New status display for URLs */}
-                  {source.type === 'url' && linkStatuses[source.value] && (
-                    <span className={`${styles.statusIndicator} ${styles[linkStatuses[source.value].status]}`} title={linkStatuses[source.value].reason}>
-                      {linkStatuses[source.value].status === 'broken' ? 'Invalid' : linkStatuses[source.value].status}
-                    </span>
-                  )}
+          <button type="button" onClick={() => fileInputRef.current?.click()} className={`${styles.button} ${styles.uploadPdfButton}`}>
+            Upload PDF Source
+          </button>
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileChange}
+            className={styles.hiddenInput}
+            accept="application/pdf"
+          />
 
-                  <button type="button" onClick={() => handleRemoveSource(index)} className={styles.removeButton}>&times;</button>
+          <div className={styles.sourcesList}>
+            {sources.map((source, index) => (
+              <div key={index} className={styles.sourceItem}>
+                <span className={styles.sourceIcon}>🔗</span>
+                <span className={styles.sourceValue}>{source.name || source.value}</span>
+                {source.type === 'url' && linkStatuses[source.value] && (
+                  <div className={styles.sourceItemPills}>
+                    <span className={`${styles.statusPill} ${getStatusClass(linkStatuses[source.value].status)}`}>
+                      {linkStatuses[source.value].status}
+                    </span>
+                    {(linkStatuses[source.value].status === 'invalid' || linkStatuses[source.value].status === 'broken') && linkStatuses[source.value].reason && (
+                      <span className={styles.reasonPill}>
+                        {linkStatuses[source.value].reason}
+                      </span>
+                    )}
+                  </div>
+                )}
+                <button type="button" onClick={() => handleRemoveSource(index)} className={styles.removeButton}>×</button>
+              </div>
+            ))}
+          </div>
+        </fieldset>
+
+        <div className={styles.aiVerificationSection}>
+          <button type="button" onClick={handleAnalyze} disabled={isAnalyzing || !headline} className={`${styles.button} ${styles.analyzeButton}`}>
+            {isAnalyzing ? 'Analyzing...' : 'Analyze Article Credibility'}
+          </button>
+          
+          {isAnalyzing && (
+            <div className={styles.analysisContainer}>
+              <div className={styles.loader}></div>
+              <p>Analyzing... this may take up to 30 seconds.</p>
+            </div>
+          )}
+
+          {parsedResponse && Object.values(parsedResponse).some(v => v) && !isAnalyzing && (
+            <div className={`${styles.analysisContainer} ${styles.structuredAnalysis}`}>
+              <h3 className={styles.analysisTitle}>AI Analysis Result</h3>
+              
+              {Object.entries(parsedResponse).map(([key, value]) => (
+                <div key={key} className={styles.analysisSection}>
+                  <h4 className={styles.analysisSectionTitle}>{key}</h4>
+                  <div className={styles.analysisSectionContent}>
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      {value}
+                    </ReactMarkdown>
+                  </div>
                 </div>
               ))}
             </div>
+          )}
+        </div>
 
-            <div className={styles.addSourceContainer}>
-              <input
-                type="text"
-                value={newUrl}
-                onChange={(e) => setNewUrl(e.target.value)}
-                placeholder="https://example.com/source-url"
-                className={styles.input}
-              />
-              <button type="button" onClick={handleAddUrl} className={styles.buttonSecondary}>Add URL</button>
-            </div>
-            
-            <input
-              type="file"
-              accept="application/pdf"
-              onChange={handleFileChange}
-              className={styles.hiddenFileInput}
-              ref={fileInputRef}
-              id="pdf-upload"
-            />
-            <button type="button" onClick={() => fileInputRef.current?.click()} className={`${styles.buttonSecondary} ${styles.fullWidthButton}`} disabled={isParsing}>
-              {isParsing ? 'Parsing PDF...' : 'Upload PDF Source'}
-            </button>
-          </div>
-          
-          <div className={styles.buttonGroup}>
-            <button type="button" onClick={handleAnalyze} disabled={isAnalyzing || !headline || !content} className={styles.buttonSecondary}>
-              {isAnalyzing ? 'Analyzing...' : 'Run AI Analysis'}
-            </button>
-            <button type="submit" disabled={isSubmitting} className={styles.button}>
-              {isSubmitting ? 'Submitting...' : 'Submit for Review'}
-            </button>
-          </div>
-        </form>
-
-        {error && <p className={styles.error}>{error}</p>}
-        
-        {isAnalyzing && <div className={styles.loader}>Analyzing with AI, please wait...</div>}
-
-        {verificationResult && (
-          <div className={styles.analysisResult} key={analysisKey}>
-            <h2 className={styles.resultTitle}>AI Analysis Report</h2>
-            {trustScore !== null && (
-              <div className={styles.trustScoreContainer}>
-                <TrustScoreMeter score={trustScore} />
-              </div>
-            )}
-            <div className={styles.markdownContent}>
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                {processedAIResponse}
-              </ReactMarkdown>
-            </div>
-          </div>
-        )}
-      </div>
-    </>
+        <div className={styles.formActions}>
+          <button
+            type="button"
+            onClick={() => handleSubmit('draft')}
+            disabled={isSubmitting}
+            className={`${styles.button} ${styles.saveDraftButton}`}
+          >
+            {isSubmitting ? 'Saving...' : 'Save Draft'}
+          </button>
+          <button
+            type="submit"
+            disabled={isSubmitting || !headline || !content || !category}
+            className={`${styles.button} ${styles.submitButton}`}
+          >
+            {isSubmitting ? 'Submitting...' : 'Submit for Review'}
+          </button>
+        </div>
+      </form>
+    </div>
   );
 };
 

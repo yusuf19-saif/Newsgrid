@@ -1,0 +1,74 @@
+.draftsContainer {
+  max-width: 900px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+}
+
+.title {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+  border-bottom: 2px solid var(--border-accent);
+  padding-bottom: 0.5rem;
+}
+
+.subtitle {
+  font-size: 1.1rem;
+  color: var(--text-secondary);
+  margin-bottom: 2.5rem;
+}
+
+.draftsList {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.draftLink {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+
+.draftItem {
+  background-color: var(--background-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--border-radius-large);
+  padding: 1.5rem;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.draftItem:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--border-accent);
+}
+
+.draftHeadline {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 0.5rem 0;
+}
+
+.draftExcerpt {
+  font-size: 1rem;
+  color: var(--text-secondary);
+  margin: 0 0 1rem 0;
+  font-style: italic;
+}
+
+.lastSaved {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.noDraftsMessage {
+  background-color: var(--background-secondary);
+  padding: 2rem;
+  border-radius: var(--border-radius-large);
+  text-align: center;
+  font-size: 1.1rem;
+  color: var(--text-secondary);
+}

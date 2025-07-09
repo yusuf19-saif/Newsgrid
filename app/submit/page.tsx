@@ -9,18 +9,33 @@ export const revalidate = 0;
 // The type needs to change to match the function's return value
 export type Category = { category: string };
 
+// We'll now use a static list of categories instead of fetching from the database.
+const fixedCategories: Category[] = [
+  { category: 'Business' },
+  { category: 'Global' },
+  { category: 'Local' },
+  { category: 'Politics' },
+  { category: 'Technology' },
+  { category: 'World' },
+  { category: 'Uncategorized' },
+  { category: 'Other' },
+  { category: 'Environment' },
+  { category: 'Health' },
+  { category: 'Science' },
+  { category: 'Education' },
+  { category: 'Crime' },
+  { category: 'Opinion' },
+  { category: 'Economy' },
+  { category: 'Culture' },
+  { category: 'Sports' },
+  { category: 'Entertainment' },
+  { category: 'Religion' },
+  { category: 'Editorial' }
+];
+
 async function getCategories(): Promise<Category[]> {
-  const supabase = await createSupabaseServerComponentClient();
-  // Call the RPC function instead of querying a table
-  const { data, error } = await supabase.rpc('get_distinct_categories');
-  
-  if (error) {
-    console.error('Error fetching categories:', error);
-    return [];
-  }
-  // The function returns objects like { category: 'Technology' }
-  // which already matches our new Category type.
-  return data || [];
+  // Sort the categories alphabetically for a better user experience.
+  return fixedCategories.sort((a, b) => a.category.localeCompare(b.category));
 }
 
 const SubmitPage = async () => {

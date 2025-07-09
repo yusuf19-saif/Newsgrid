@@ -314,9 +314,11 @@
 }
 
 .title {
-  font-size: 2.5rem;
+  font-size: 2.2rem;
   font-weight: 700;
-  margin-bottom: 0.5rem;
+  margin-bottom: 2rem;
+  color: var(--text-primary);
+  text-align: center;
 }
 
 .description {
@@ -663,4 +665,486 @@
   border-radius: 12px;
   color: white;
   text-transform: capitalize;
+}
+
+.errorBanner {
+  background-color: var(--error-background);
+  color: var(--error-text);
+  padding: 1rem;
+  border-radius: var(--border-radius-medium);
+  margin-bottom: 1rem;
+  text-align: center;
+  font-weight: 500;
+}
+
+.successBanner {
+  background-color: var(--success-background);
+  color: var(--success-text);
+  padding: 1rem;
+  border-radius: var(--border-radius-medium);
+  margin-bottom: 1rem;
+  text-align: center;
+  font-weight: 500;
+}
+
+.submitForm {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem; /* Consistent spacing between form groups */
+}
+
+/* New styling for the sources section */
+.sourcesGroup {
+  border: 1px solid var(--border-primary);
+  padding: 1.5rem;
+  border-radius: var(--border-radius-large);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.subheading {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+  padding: 0;
+  border: 0;
+}
+
+.addUrlContainer {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.addUrlContainer input {
+  flex-grow: 1; /* Make the input take up available space */
+}
+
+.hiddenInput {
+  display: none;
+}
+
+/* General button styling */
+.button {
+  padding: 0.75rem 1.5rem;
+  border: 1px solid transparent;
+  border-radius: var(--border-radius-medium);
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+.button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Primary submit button */
+.submitButton {
+  background-color: var(--accent-primary);
+  color: white;
+}
+.submitButton:hover:not(:disabled) {
+  background-color: var(--accent-primary-hover);
+}
+
+/* Secondary save draft button */
+.saveDraftButton {
+  background-color: transparent;
+  color: var(--text-primary);
+  border-color: var(--border-primary);
+}
+.saveDraftButton:hover:not(:disabled) {
+  background-color: var(--background-accent);
+  border-color: var(--border-accent);
+}
+
+/* Utility buttons for sources */
+.addUrlButton, .uploadPdfButton {
+  background-color: var(--background-accent);
+  color: var(--text-primary);
+}
+.addUrlButton:hover:not(:disabled), .uploadPdfButton:hover:not(:disabled) {
+  background-color: var(--border-primary);
+}
+
+/* Container for the main action buttons */
+.formActions {
+  display: flex;
+  justify-content: flex-end; /* Align buttons to the right */
+  gap: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-primary);
+  margin-top: 1rem;
+}
+
+.aiVerificationSection {
+  margin-top: 1rem;
+  padding: 1.5rem;
+  border: 1px dashed var(--border-accent);
+  border-radius: var(--border-radius-large);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.analyzeButton {
+  background-color: var(--link-primary);
+  color: white;
+  width: 100%;
+}
+.analyzeButton:hover:not(:disabled) {
+  background-color: var(--link-primary-hover);
+}
+
+.aiResultContainer {
+  margin-top: 1.5rem;
+  padding: 1.5rem;
+  border: 1px solid var(--border-primary);
+  border-radius: var(--border-radius);
+  background-color: var(--background-secondary);
+}
+
+.trustScoreDisplay {
+  margin-bottom: 1rem;
+}
+
+.aiResponse {
+  background-color: var(--background-primary);
+  padding: 1rem;
+  border-radius: var(--border-radius-medium);
+  line-height: 1.6;
+}
+
+.aiResponse a {
+  color: var(--link-primary);
+  text-decoration: underline;
+}
+
+.aiResponse p {
+  margin-bottom: 1em;
+}
+
+.submitContainer {
+  max-width: 800px;
+  margin: 2rem auto;
+  padding: 2.5rem;
+  background-color: transparent;
+  border: none;
+  box-shadow: none;
+  /* --- THE FINAL CSS FIX --- */
+  position: relative;
+  z-index: 1;
+}
+
+.submitForm {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem; /* Increased spacing between sections */
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.input,
+.textarea,
+.select {
+  background-color: var(--background-primary);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--border-radius-medium);
+  padding: 0.8rem 1rem;
+  font-size: 1rem;
+  color: var(--text-primary);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.input::placeholder,
+.textarea::placeholder {
+  color: var(--text-muted);
+}
+
+.input:focus,
+.textarea:focus,
+.select:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px var(--accent-primary-transparent);
+}
+
+.textarea {
+  resize: vertical;
+  min-height: 200px;
+}
+
+.select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right 0.5rem center;
+  background-repeat: no-repeat;
+  background-size: 1.5em 1.5em;
+  padding-right: 2.5rem;
+}
+
+.sourcesFieldset {
+  border: 1px solid var(--border-primary);
+  padding: 1.5rem;
+  border-radius: var(--border-radius);
+  margin-top: 1.5rem;
+}
+
+.addSourceForm {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.addSourceForm .input {
+  flex-grow: 1;
+}
+
+.addSourceForm .button {
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: var(--border-radius-medium, 8px);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid var(--button-secondary-bg);
+  background-color: var(--button-secondary-bg);
+  color: var(--button-secondary-text);
+}
+
+.addSourceForm .button:hover {
+  background-color: var(--button-secondary-hover-bg);
+  border-color: var(--button-secondary-hover-bg);
+}
+
+.addSourceForm .button:disabled {
+  background-color: var(--button-secondary-bg);
+  color: var(--button-secondary-text);
+  opacity: 0.65;
+  cursor: not-allowed;
+  border-color: var(--button-secondary-bg);
+}
+
+/* New styling for the sources section */
+.sourcesGroup {
+  border: 1px solid var(--border-primary);
+  padding: 1.5rem;
+  border-radius: var(--border-radius-large);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.sourcesList {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.sourceItem {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background-color: var(--background-primary);
+  padding: 0.75rem 1rem;
+  border-radius: var(--border-radius-medium);
+  border: 1px solid var(--border-primary);
+}
+
+.sourceIcon {
+  color: var(--text-muted);
+}
+
+.sourceValue {
+  flex-grow: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.9rem;
+}
+
+.removeButton {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 1.2rem;
+  padding: 0;
+  line-height: 1;
+}
+.removeButton:hover {
+  color: var(--error-text);
+}
+
+.statusPill {
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: capitalize;
+  cursor: help; /* Show a help cursor on hover */
+}
+
+.validPill {
+  background-color: var(--success-background);
+  color: var(--success-text);
+}
+
+.invalidPill, .brokenPill {
+  background-color: var(--error-background);
+  color: var(--error-text);
+}
+
+.checkingPill {
+  background-color: #fef9c3; /* A nice yellow for checking */
+  color: #92400e;
+}
+
+.sourceStatus.broken {
+  background-color: var(--warning-secondary);
+  color: var(--warning-primary);
+}
+
+.sourceReason {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-left: 1rem;
+  font-style: italic;
+}
+
+.actionButtons {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.analysisContent h4 {
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+  font-size: 1.2rem;
+  border-bottom: 1px solid var(--border-primary);
+  padding-bottom: 0.25rem;
+}
+
+/* --- NEW STYLES for structured analysis --- */
+.structuredAnalysis .analysisGrid {
+  display: grid;
+  grid-template-columns: 150px 1fr; /* Column for score, column for summary */
+  gap: 2rem;
+  align-items: start;
+}
+
+.structuredAnalysis .scoreCell {
+  grid-column: 1 / 2;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding-top: 1rem;
+}
+
+.structuredAnalysis .summaryCell {
+  grid-column: 2 / 3;
+}
+
+.structuredAnalysis .fullWidthCell {
+  grid-column: 1 / -1; /* Span both columns */
+  margin-top: 1rem;
+}
+
+.structuredAnalysis h4 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid var(--border-secondary);
+}
+
+.structuredAnalysis p,
+.structuredAnalysis li {
+  color: var(--text-secondary);
+}
+/* --- END NEW STYLES --- */
+
+/* --- UPDATED STYLES for structured analysis --- */
+.structuredAnalysis {
+  padding: 1.5rem;
+}
+
+.analysisSection {
+  margin-bottom: 2rem;
+}
+
+.analysisSection:last-child {
+  margin-bottom: 0;
+}
+
+.analysisSectionTitle {
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid var(--border-secondary);
+}
+
+.analysisSectionContent {
+  color: var(--text-secondary);
+  line-height: 1.7;
+}
+
+/* Style markdown elements */
+.analysisSectionContent h4 {
+  font-size: 1.1rem;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.analysisSectionContent table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+}
+
+.analysisSectionContent th,
+.analysisSectionContent td {
+  border: 1px solid var(--border-primary);
+  padding: 0.75rem;
+  text-align: left;
+}
+
+.analysisSectionContent th {
+  background-color: var(--background-accent);
+  font-weight: 600;
+}
+
+.analysisSectionContent ul,
+.analysisSectionContent ol {
+  padding-left: 1.5rem;
+  margin-top: 0.5rem;
+}
+/* --- END UPDATED STYLES --- */
+
+
+.form {
+  margin-top: 2rem;
 }

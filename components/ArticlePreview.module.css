@@ -1,4 +1,4 @@
-.articlePreview {
+.article {
   background-color: var(--background-secondary);
   border: 1px solid var(--border-primary);
   border-radius: var(--border-radius-large, 12px);
@@ -6,30 +6,42 @@
   margin-bottom: 25px;
   box-shadow: var(--shadow-md);
   transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out, background-color 0.3s ease, border-color 0.3s ease;
+  display: flex;
+  flex-direction: column;
 }
 
-.articlePreview:hover {
+.article:hover {
   transform: translateY(-4px);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-lg);
 }
 
-.titleLink {
-  text-decoration: none;
-}
-.titleLink h2 {
-  margin-top: 0;
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
   margin-bottom: 10px;
+}
+
+.headline {
+  margin: 0;
+  flex-grow: 1;
+}
+
+.link {
+  text-decoration: none;
   font-size: 1.4rem;
   font-weight: 700;
   line-height: 1.3;
   color: var(--text-primary);
   transition: color 0.3s ease;
 }
-.titleLink:hover h2 {
+
+.link:hover {
   color: var(--link-primary);
 }
 
-.categoryTag {
+.category {
   display: inline-block;
   background-color: var(--background-accent);
   color: var(--text-secondary);
@@ -44,8 +56,9 @@
   border: 1px solid transparent;
   text-decoration: none;
   transition: background-color 0.2s ease, color 0.2s ease;
+  align-self: flex-start;
 }
-.categoryTag:hover {
+.category:hover {
   color: var(--link-primary);
   text-decoration: none;
 }
@@ -58,12 +71,54 @@
   transition: color 0.3s ease;
 }
 
-.metadata {
+.meta {
   font-size: 0.8rem;
   color: var(--text-muted);
   transition: color 0.3s ease;
+  display: flex;
+  gap: 1rem;
+  margin-top: auto;
+  padding-top: 1rem;
 }
-.metadata p {
-  margin-bottom: 3px;
-  color: var(--text-muted);
+
+.statusPill {
+  font-size: 0.75rem;
+  font-weight: bold;
+  color: var(--text-secondary);
+  padding: 5px 12px;
+  border-radius: var(--border-radius-large, 12px);
+  background-color: var(--background-accent);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.managementControls {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #eee;
+  display: flex;
+  gap: 10px;
+}
+
+.managementControls button {
+  padding: 8px 12px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.publishButton {
+  background-color: #28a745;
+  color: white;
+}
+
+.unpublishButton {
+  background-color: #ffc107;
+  color: #333;
+}
+
+.deleteButton {
+  background-color: #dc3545;
+  color: white;
 }

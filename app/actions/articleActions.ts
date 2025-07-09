@@ -1,167 +1,160 @@
 'use server';
 
-import { perplexity } from '@ai-sdk/perplexity';
-import { generateText } from 'ai';
-import { type Source } from '@/types'; // Import the new Source type
+import { GoogleGenerativeAI } from '@google/generative-ai';
+import { type Source } from '@/types';
 
-interface VerifyArticleParams {
+// This interface defines the expected structure of the input to our action.
+interface VerifyArticleInput {
   headline: string;
   content: string;
-  sources: Source[]; // Source type now includes status and reason
-  lastUpdated?: string; // Add lastUpdated to the params
+  sources: Source[];
+  lastUpdated: string;
 }
 
-type SearchResult = {
-  title: string;
-  url: string;
-};
+// Get the API key from environment variables using the NEXT_PUBLIC_ prefix.
+const googleApiKey = process.env.NEXT_PUBLIC_GOOGLE_API_KEY;
 
-// Define the explicit return types for our function
-type VerificationSuccess = {
-  text: string;
-  searchResults?: SearchResult[];
-  error?: undefined;
-  message?: undefined;
-};
+// Throw an error if the API key is not found.
+if (!googleApiKey) {
+  throw new Error('GOOGLE_API_KEY is not set in environment variables.');
+}
 
-type VerificationError = {
-  error: true;
-  message: string;
-};
-type VerificationResult = VerificationSuccess | VerificationError;
+// Initialize the Google Generative AI client.
+const genAI = new GoogleGenerativeAI(googleApiKey);
 
-export async function verifyArticle({ headline, content, sources, lastUpdated }: VerifyArticleParams): Promise<VerificationResult> {
+export async function verifyArticle(
+  { headline, content, sources }: VerifyArticleInput
+) {
   try {
-    const systemPrompt = `You are an AI fact-checking assistant. Your task is to analyze a news article and output a credibility report using the exact structure below. Do not deviate.
+    // Select the Gemini model.
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+    // Construct a new, detailed prompt optimized for Gemini.
+    const prompt = `
+You are an AI fact-checking assistant designed to analyze a user-submitted news article and assess its credibility. Always return your response using the exact structure and headings outlined below. Do not deviate from this structure. Do not reorder, remove, or rename sections.
+
+Use consistent tone, bullet formatting, and scoring logic in every response. Ensure dates, file types, and references are clearly labeled.
+
+--- BEGIN STRUCTURE ---
+
+⏰ Article Freshness
+_This article is over X days old. Information may be outdated. Consider revising._
 
 ---
 
-⏰ **Article Freshness**
-"This article is over X days old. Information may be outdated. Consider revising."
-(Auto-calculate based on article date. If recent, omit this section.)
+🔍 1. Headline Analysis
+**Headline:** "..."
+**Assessment:** (Accurate / Somewhat Misleading / Misleading)
+**Explanation:** One or two concise sentences assessing how well the headline reflects the article content and tone. Flag emotionally charged or vague language.
 
 ---
 
-🔍 **1. Headline Analysis**
-**Headline:** "{insert headline}"
-**Assessment:** {Accurate / Somewhat Misleading / Misleading}
-**Explanation:** Explain if the headline is sensational, vague, or accurate.
+🧩 2. Claim Extraction
+Extract 3–6 key claims from the article. Use this exact table format:
 
----
-
-🧩 **2. Claim Extraction**
 | # | Claim | Type |
 |---|-------|------|
-| 1 | {Claim 1} | {Factual / Statistical / Causal / etc.} |
-(Extract 3-6 major, verifiable claims.)
+| 1 | "..." | (Factual / Statistical / Expert Opinion / Causal / Official Action) |
+| 2 | "..." | ... |
+| 3 | "..." | ... |
 
 ---
 
-🔗 **3. Source Verification**
-**Validation Rules:**
-- For each source, I will provide a 'Status'. You MUST use that status.
-- Invalid sources MUST be excluded from claim support and scoring.
-- List each source with its full URL and the provided status.
+🔗 3. Source Verification
 
-For each user-provided source:
-**[#] {Full URL or File Name}**
-**Status:** {Use the status I provide below}
-**Relevance:** {Assess as Relevant, Irrelevant, or Partially Relevant}
-**Supports:** {State which claim(s) it supports or "None"}
+List and verify each user-provided source (URLs or PDFs) individually using this format:
+
+#### Source 1
+**URL or File:** ...
+**Status:** (Reachable / Broken / Inaccessible)
+**Relevance:** (Clearly supports claims / Weakly relevant / Irrelevant)
+**Supports:** (Claim #1, Claim #3) or "None"
+
+Repeat for all sources. Flag PDFs as **Private – Not publicly verifiable** if they can't be independently accessed.
 
 ---
 
-✅ **Claim-by-Claim Support**
-(Reference only valid sources using [1], [2], etc.)
+✅ Claim-by-Claim Support
+Cross-check each claim with sources. Use this table format:
+
 | Claim # | Supported? | Source(s) | Notes |
 |---------|------------|-----------|-------|
-| 1 | Yes / No / Partial | [1], [2] | Explain briefly |
+| 1 | Yes / Partially / No | [1][3] | Concise explanation |
+| 2 | ... | ... | ... |
 
 ---
 
-📊 **4. Trust Score Breakdown**
-(Only count valid and reachable sources when scoring.)
-| Category | Score (out of) | Rationale |
+📊 4. Trust Score Breakdown
+
+Use this exact scoring breakdown:
+
+| Category | Score | Rationale |
 |----------|-------|-----------|
-| Headline Accuracy | 20 | ... |
-| Source Quality | 20 | ... |
-| Claim Support | 30 | ... |
-| Tone & Bias | 10 | ... |
-| Structure & Clarity | 10 | ... |
-| Bonus | 10 | (Primary sources, data, etc.) |
-**Total Trust Score** | **/100** |
+| Headline Accuracy | /20 | ... |
+| Source Quality | /20 | ... |
+| Claim Support | /30 | ... |
+| Tone & Bias | /10 | ... |
+| Structure & Clarity | /10 | ... |
+| Bonus | /10 | (Primary sources, transparency, etc.) |
+
+**Total Trust Score: X/100**
 
 ---
 
-💬 **5. Suggestions for Improvement**
-• Add verifiable sources for unsupported claims.
-• Replace broken or irrelevant sources.
-• Include official quotes or citations.
+💬 5. Suggestions for Improvement
+• Provide direct data for unsupported claims
+• Replace inaccessible or irrelevant sources
+• Add specific attribution quotes, temperature ranges, etc.
+(List 3–6 concrete ways to improve)
 
 ---
 
-🧾 **6. Final Summary**
-Summarize credibility. Note if claims are unsupported.
-**If sources were excluded due to being invalid, add this note:** "Note: One or more user-provided sources were excluded from verification because they were invalid or irrelevant."
-End with:
-**Trust Score: X/100**
+🧾 6. Final Summary
+1–2 sentence summary of credibility and trust level.
+
+**Trust Score:** X/100
 
 ---
 
-📚 **References Used**
-List all sources referenced in [bracket] format.
-Label invalid sources clearly:
-[X] URL - Invalid (Page not found)
-[X] File - Private PDF – Not publicly verifiable
-[X] URL - Irrelevant`;
+📚 References
+List all public sources in reference format, including full URLs.
 
-    // Pass the status from our API check directly to the AI for its consideration
-    const formattedSources = sources.map((source, index) => {
-      const sourceNumber = index + 1;
-      let sourceInfo = '';
+---
 
-      if (source.type === 'url') {
-        // Use the status passed from the frontend. Default to 'Reachable' if for some reason it's not provided.
-        const status = source.reason ? `Invalid (${source.reason})` : 'Reachable';
-        sourceInfo = `[${sourceNumber}] Public URL: ${source.value}\nStatus provided: ${status}`;
-      } else if (source.type === 'pdf') {
-        const wordCount = source.value.trim().split(/\s+/).length;
-        let statusInfo = "Private PDF – Not publicly verifiable";
-        if (wordCount < 50) {
-          statusInfo = "Unreadable or Empty";
-        }
-        sourceInfo = `[${sourceNumber}] Private File: ${source.name || 'Uploaded PDF'}\nStatus provided: ${statusInfo}\n\n--- PDF Content for Source [${sourceNumber}] ---\n${source.value}\n--- End PDF ---`;
-      }
-      return sourceInfo;
-    }).join('\n\n');
+DO NOT add extra commentary. DO NOT invent sources. DO NOT deviate from this structure under any circumstances. Maintain identical formatting and tone across all uses.
 
-    const daysOld = lastUpdated ? Math.floor((new Date().getTime() - new Date(lastUpdated).getTime()) / (1000 * 60 * 60 * 24)) : 0;
-    const articleAgePreamble = daysOld > 30 ? `Article is ${daysOld} days old.` : 'Article is recent.';
+--- END STRUCTURE ---
 
-    const result = await generateText({
-        model: perplexity('sonar-pro'),
-        system: systemPrompt,
-        prompt: `Analyze the following article. ${articleAgePreamble}\n\n**Headline:** ${headline}\n\n**Content:**\n${content}\n\n**User-Provided Sources:**\n${formattedSources}`,
-    });
+---
+**Article to Analyze:**
+**Headline:** "${headline}"
+**Content:** "${content}"
+---
+**Provided Sources for Verification:**
+      ${sources.map((s, i) => `
+        **Source ${i + 1}:**
+        - URL: ${s.value}
+        - Initial Status: ${s.status || 'Not Checked'}
+        - Initial Reason: ${s.reason || 'N/A'}
+      `).join('')}
+    `;
 
-    const searchResults = result.sources
-      ?.filter(s => s.sourceType === 'url')
-      .map(s => ({
-        url: s.url,
-        // The title is optional on the source, so we provide a fallback.
-        title: s.sourceType === 'url' ? s.title ?? s.url : 'Unknown Source',
-      }));
+    // Generate the content using the Gemini model.
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text();
 
+    // Return the response in the expected format.
     return {
-      text: result.text,
-      searchResults: searchResults,
+      text: text,
+      searchResults: [] // The Gemini SDK doesn't have built-in search tools like the other one.
     };
-
   } catch (error) {
-    console.error('Error verifying article with Perplexity:', error);
+    console.error('Error calling Google Gemini API:', error);
+    // Return a structured error that the client can display.
     return {
       error: true,
-      message: error instanceof Error ? error.message : 'An unknown error occurred.',
+      message: 'Failed to get a response from the AI. Please try again later.'
     };
   }
 }

@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { Article } from '@/types'; // Import your main Article type
 import ArticlePreview from '@/components/ArticlePreview'; // Import ArticlePreview
 import styles from './profile.module.css'; // Let's assume you'll create this for styling
+import { createSupabaseServerComponentClient } from '@/lib/supabaseServerComponentClient';
 // You might want a specific type for Profile if it differs significantly or for clarity
 // import { Profile } from '@/types'; // Assuming you might create a Profile type
 
@@ -95,6 +96,13 @@ async function getArticlesByAuthor(authorId: string): Promise<Article[]> {
 export default async function UserProfilePage({ params }: { params: Promise<ProfilePageParams> }) {
   const { userId } = await params;
   
+  // Create a supabase client to get the currently logged-in user
+  const supabase = await createSupabaseServerComponentClient();
+  const { data: { user: loggedInUser } } = await supabase.auth.getUser();
+
+  // Determine if the logged-in user is the owner of this profile
+  const isOwner = loggedInUser?.id === userId;
+
   // Fetch profile and articles in parallel
   const [userProfile, articlesByAuthor] = await Promise.all([
     getUserProfile(userId),
@@ -105,20 +113,27 @@ export default async function UserProfilePage({ params }: { params: Promise<Prof
     notFound(); // Or display a "Profile not found" message
   }
 
+  // Filter articles for the owner view if needed
+  const articlesToDisplay = isOwner 
+    ? articlesByAuthor // Show all articles to the owner
+    : articlesByAuthor.filter(article => article.status === 'Published'); // Show only published to others
+
   return (
     <div className={styles.profileContainer}> {/* Added a container class */}
       <section className={styles.profileHeader}>
         <h1>{userProfile.full_name}'s Articles</h1>
-        {/* You could add more profile details here later, like join date, bio, etc. */}
+        {isOwner && <p className={styles.ownerNotice}>You are viewing your own profile. You can manage your articles below.</p>}
       </section>
 
       <section className={styles.articlesSection}>
-        {articlesByAuthor && articlesByAuthor.length > 0 ? (
+        {articlesToDisplay.length > 0 ? (
           <div className={styles.articlesGrid}> {/* Reuse homepage grid style if desired */}
-            {articlesByAuthor.map((article) => (
-              <ArticlePreview key={article.id} article={article} />
+            {articlesToDisplay.map((article) => (
+              <ArticlePreview key={article.id} article={article} isOwner={isOwner} />
             ))}
           </div>
+        ) : isOwner ? (
+          <p>You have not submitted any articles yet. <a href="/submit">Submit one now!</a></p>
         ) : (
           <p>This author has not published any articles yet.</p>
         )}
