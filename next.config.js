@@ -15,7 +15,8 @@ const nextConfig = {
       },
     ],
   },
-  webpack: (config, { isServer }) => {
+  webpack: (config, { isServer, webpack }) => {
+    // Correctly configure CopyWebpackPlugin
     if (!isServer) {
       config.plugins.push(
         new CopyWebpackPlugin({
@@ -28,6 +29,16 @@ const nextConfig = {
         })
       );
     }
+
+    // Exclude the public directory from Terser minification
+    if (config.optimization.minimizer) {
+      config.optimization.minimizer.forEach(minimizer => {
+        if (minimizer.constructor.name === 'TerserPlugin') {
+          minimizer.options.exclude = [/\.next\//, /public\//];
+        }
+      });
+    }
+
     return config;
   },
 };
