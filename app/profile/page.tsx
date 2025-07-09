@@ -102,9 +102,11 @@ export default function ProfilePage() {
         <h2>Your Submitted Articles</h2>
         {submittedArticles.length > 0 ? (
           <div className={styles.articlesGrid}>
-            {submittedArticles.map((article) => (
-              <ArticlePreview key={article.id} article={article} />
-            ))}
+            {submittedArticles.map((article) => {
+              // Since this is the user's own profile page, they are always the owner.
+              const isOwner = true;
+              return <ArticlePreview key={article.id} article={article} isOwner={isOwner} />;
+            })}
           </div>
         ) : (
           <p>You haven't submitted any articles yet.</p>
