@@ -1,6 +1,7 @@
 import ArticlePreview from '@/components/ArticlePreview'; // Adjust path if needed
 import { Article } from '@/types'; // Adjust path if needed
 import styles from './search.module.css'; // We'll create this next
+import { createSupabaseServerComponentClient } from '@/lib/supabaseServerComponentClient';
 
 // --- Re-use or import dummy data ---
 // Ideally, get data from API/database based on search query
@@ -23,6 +24,10 @@ interface SearchPageProps {
 
 // Pages in App Router receive searchParams as a prop
 export default async function SearchPage({ searchParams }: SearchPageProps) {
+  const supabase = await createSupabaseServerComponentClient();
+  const { data: { session } } = await supabase.auth.getSession();
+  const userId = session?.user?.id;
+  
   const params = await searchParams; // Await the searchParams
   const query = params?.q || ''; // Get query 'q' or default to empty string
 
@@ -49,9 +54,10 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
       {query ? ( // Only show results if there was a query
         filteredArticles.length > 0 ? (
           <div className={styles.resultsList}>
-            {filteredArticles.map((article) => (
-              <ArticlePreview key={article.id} article={article} />
-            ))}
+            {filteredArticles.map((article) => {
+              const isOwner = article.author_id === userId;
+              return <ArticlePreview key={article.id} article={article} isOwner={isOwner} />;
+            })}
           </div>
         ) : (
           <p className={styles.noResultsMessage}>

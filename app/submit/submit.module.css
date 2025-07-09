@@ -1148,3 +1148,24 @@
 .form {
   margin-top: 2rem;
 }
+
+.sourceInputContainer {
+  margin-bottom: 1.5rem;
+}
+
+.urlInputGroup {
+  display: flex; /* Use Flexbox for alignment */
+  gap: 0.5rem;   /* Add a small gap between the input and the button */
+}
+
+.urlInputGroup input {
+  flex-grow: 1; /* Allow the input to take up the available space */
+  border-radius: var(--border-radius-medium) 0 0 var(--border-radius-medium); /* Adjust border radius */
+}
+
+.urlInputGroup button {
+  flex-shrink: 0; /* Prevent the button from shrinking */
+  border-radius: 0 var(--border-radius-medium) var(--border-radius-medium) 0; /* Adjust border radius */
+  /* Remove the transform on hover for this specific button if it causes layout jumps */
+  transform: none;
+}
