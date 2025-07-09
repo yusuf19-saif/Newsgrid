@@ -70,7 +70,10 @@ export default async function ArticlePage({ params }: { params: Promise<ArticleP
   }
   
   // The join result is now in `article.profiles`. Handle case where it might be null.
-  const authorName = (article.profiles as { full_name: string })?.full_name || 'Anonymous';
+  // Correctly access the author's name from the first element of the profiles array.
+  const authorName = Array.isArray(article.profiles) && article.profiles.length > 0
+    ? article.profiles[0].full_name
+    : 'Anonymous';
   
   // Map the author data to the expected property
   const articleWithAuthor = {
