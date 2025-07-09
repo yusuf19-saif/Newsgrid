@@ -1,6 +1,7 @@
 import ArticlePreview from '@/components/ArticlePreview'; // Adjust path if needed
 import { Article } from '@/types'; // Adjust path if needed
 import styles from './category.module.css'; // We'll create this next
+import { createSupabaseServerComponentClient } from '@/lib/supabaseServerComponentClient';
 
 interface CategoryPageParams {
   categoryName: string; // Matches the folder name [categoryName]
@@ -42,6 +43,12 @@ function capitalizeFirstLetter(string: string) {
 
 export default async function CategoryPage({ params }: CategoryPageProps) {
   const { categoryName } = await params;
+  const supabase = await createSupabaseServerComponentClient();
+
+  // Get the current user's session to check for ownership
+  const { data: { session } } = await supabase.auth.getSession();
+  const userId = session?.user?.id;
+
   // Decode the category name from the URL (handles spaces %20 etc.)
   // The API will handle case-insensitivity with .ilike(), so we send it as is from the URL
   const categoryNameFromUrl = decodeURIComponent(categoryName);
@@ -57,9 +64,10 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
 
       {articles.length > 0 ? (
         <div className={styles.articleList}>
-          {articles.map((article) => (
-            <ArticlePreview key={article.id} article={article} />
-          ))}
+          {articles.map((article) => {
+            const isOwner = article.author_id === userId;
+            return <ArticlePreview key={article.id} article={article} isOwner={isOwner} />;
+          })}
         </div>
       ) : (
         <p className={styles.noArticlesMessage}>
