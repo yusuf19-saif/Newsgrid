@@ -52,7 +52,7 @@ export default function ArticlePreview({ article, isOwner }: ArticlePreviewProps
       {isOwner && (
         <ArticleManagementButtons 
           articleSlug={article.slug}
-          currentStatus={article.status} 
+          currentStatus={article.status || 'draft'} 
         />
       )}
     </article>
