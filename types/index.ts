@@ -22,6 +22,6 @@ export interface Article {
   sources?: Source[] | null; // New: Replaces the old 'source' string.
   source?: string | null; // Old field, can be removed later.
   author_id?: string | null;
-  status?: 'Published' | 'Pending' | 'Rejected';
+  status?: 'Published' | 'Pending' | 'Rejected' | 'draft' | 'pending_review';
   author_full_name?: string | null;
 }
