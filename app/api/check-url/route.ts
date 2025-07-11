@@ -11,12 +11,10 @@ export async function GET(request: Request) {
 
   try {
     // 1. Scrape the URL to get the full result object.
-    const scrapeResult = await scrapeUrl(url);
-    const statusCode = scrapeResult.result.response_headers.status;
-    const content = scrapeResult.result.content;
+    const { content, statusCode } = await scrapeUrl(url);
 
     // 2. Use the status code for reliable checking.
-    if (statusCode === 404) {
+    if (statusCode === '404') {
       return NextResponse.json({ status: 'broken', reason: 'The page was not found (404 Error).' });
     }
     
