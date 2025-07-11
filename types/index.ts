@@ -25,4 +25,5 @@ export interface Article {
   article_type?: string; // New: Defines the type of article (e.g., "News", "Opinion")
   status?: 'Published' | 'Pending' | 'Rejected' | 'draft' | 'pending_review';
   author_full_name?: string | null;
+  analysis_result?: any; // New: Stores the JSON result from the AI analysis.
 }
