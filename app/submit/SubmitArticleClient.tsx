@@ -268,8 +268,11 @@ const SubmitArticleClient = ({ categories }: SubmitArticleClientProps) => {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'The analysis service failed.');
+        throw new Error(`API Error: ${response.statusText}`);
+      }
+
+      if (!response.body) {
+        throw new Error("Response stream not available");
       }
 
       const reader = response.body.getReader();
