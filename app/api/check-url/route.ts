@@ -1,18 +1,18 @@
 import { NextResponse } from 'next/server';
 import { scrapeUrl } from '../../../lib/scrapflyService';
-import { ScrapeResult } from 'scrapfly-sdk';
+// No longer importing a type that doesn't exist
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const url = searchParams.get('url');
 
   if (!url) {
-    return NextResponse.json({ error: 'URL parameter is required' }, { status: 400 });
+    return NextResponse.json({ error: 'URL is required' }, { status: 400 });
   }
 
   try {
     // 1. Scrape the URL to get the full result object.
-    const scrapeResult: ScrapeResult = await scrapeUrl(url);
+    const scrapeResult: any = await scrapeUrl(url);
     const statusCode = scrapeResult.result.response_headers.status;
 
     // 2. Use the status code for reliable checking.
