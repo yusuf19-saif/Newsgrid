@@ -125,16 +125,21 @@ async function generateFullReport(headline: string, content: string, sources: an
     const urls = sources.filter(s => s.type === 'url').map(s => s.value);
     let sourcesForPrompt = "No URL sources provided.";
     if (urls.length > 0) {
-      const scrapePromises = urls.map(url => 
-        scrapeUrl(url)
-          .then(result => ({ 
-            url, 
-            content: result.result.content,
-            is_broken: result.result.response_headers.status !== 200
-          }))
-          .catch(err => ({ url, content: `Failed to scrape: ${err.message}`, is_broken: true }))
+      const scrapedSources = await Promise.all(
+        urls.map(async (url) => {
+          try {
+            const result: any = await scrapeUrl(url); // Using `any` for now to reflect the untyped nature
+            return {
+              url,
+              content: result.result.content,
+              // --- FIX: Compare status to a string, not a number ---
+              is_broken: result.result.response_headers.status !== '200' 
+            };
+          } catch (err: any) {
+            return { url, content: `Failed to scrape: ${err.message}`, is_broken: true };
+          }
+        })
       );
-      const scrapedSources = await Promise.all(scrapePromises);
       sourcesForPrompt = scrapedSources.map((source, index) => {
         return `Source [${index + 1}]:\nURL: ${source.url}\nBROKEN: ${source.is_broken}\nCONTENT: ${source.content.substring(0, 2000)}...`;
       }).join('\n\n---\n\n');
