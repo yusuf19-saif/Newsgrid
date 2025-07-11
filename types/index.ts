@@ -22,6 +22,7 @@ export interface Article {
   sources?: Source[] | null; // New: Replaces the old 'source' string.
   source?: string | null; // Old field, can be removed later.
   author_id?: string | null;
+  article_type?: string; // New: Defines the type of article (e.g., "News", "Opinion")
   status?: 'Published' | 'Pending' | 'Rejected' | 'draft' | 'pending_review';
   author_full_name?: string | null;
 }
