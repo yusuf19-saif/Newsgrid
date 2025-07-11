@@ -11,12 +11,12 @@ interface VerifyArticleInput {
   lastUpdated: string;
 }
 
-// Get the API key from environment variables using the NEXT_PUBLIC_ prefix.
-const googleApiKey = process.env.NEXT_PUBLIC_GOOGLE_API_KEY;
+// Get the API key from a SERVER-SIDE environment variable.
+const googleApiKey = process.env.GOOGLE_API_KEY;
 
 // Throw an error if the API key is not found.
 if (!googleApiKey) {
-  throw new Error('GOOGLE_API_KEY is not set in environment variables.');
+  throw new Error('GOOGLE_API_KEY is not set in server environment variables.');
 }
 
 // Initialize the Google Generative AI client.

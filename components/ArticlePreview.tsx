@@ -36,7 +36,7 @@ export default function ArticlePreview({ article, isOwner }: ArticlePreviewProps
         <h2 className={styles.headline}>
           <Link href={`/article/${article.slug}`} className={styles.link}>
             {article.headline}
-          </Link>
+      </Link>
         </h2>
         {isOwner && <div className={styles.statusPill}>{article.status}</div>}
       </div>

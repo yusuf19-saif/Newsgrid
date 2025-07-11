@@ -1,34 +1,6 @@
 import { NextResponse } from 'next/server';
 import { scrapeUrl } from '../../../lib/scrapflyService';
 
-const getTitle = (html: string): string => {
-  const titleMatch = html.match(/<title>(.*?)<\/title>/i);
-  return titleMatch ? titleMatch[1].toLowerCase() : '';
-};
-
-// This function now ONLY analyzes successful HTML content.
-// It no longer needs its own try/catch for scraping errors.
-function analyzeHtmlContent(htmlContent: string): { status: 'valid' | 'broken'; reason?: string } {
-  const lowerCaseBody = htmlContent.toLowerCase();
-  const pageTitle = getTitle(htmlContent);
-  
-  const notFoundPhrases = [
-    "page not found", "404", "this page does not exist", 
-    "we couldn't find the page", "we can't find", "page doesn't exist"
-  ];
-
-  if (notFoundPhrases.some(phrase => lowerCaseBody.includes(phrase) || pageTitle.includes(phrase))) {
-    return { status: 'broken', reason: "Content indicates the page was not found." };
-  }
-  
-  const wordCount = htmlContent.trim().split(/\s+/).length;
-  if (wordCount < 100) {
-    return { status: 'broken', reason: `Page content is too short (${wordCount} words).` };
-  }
-
-  return { status: 'valid' };
-}
-
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const url = searchParams.get('url');
@@ -38,22 +10,34 @@ export async function GET(request: Request) {
   }
 
   try {
-    // 1. Attempt to scrape the URL. This is the only part that can throw.
-    const htmlContent = await scrapeUrl(url);
+    // 1. Scrape the URL to get the full result object.
+    const scrapeResult = await scrapeUrl(url);
+    const statusCode = scrapeResult.result.response_headers.status;
+    const content = scrapeResult.result.content;
 
-    // 2. If scraping is successful, analyze the content.
-    const result = analyzeHtmlContent(htmlContent);
-    return NextResponse.json(result);
+    // 2. Use the status code for reliable checking.
+    if (statusCode === 404) {
+      return NextResponse.json({ status: 'broken', reason: 'The page was not found (404 Error).' });
+    }
+    
+    if (statusCode >= 400) {
+        return NextResponse.json({ status: 'broken', reason: `The page returned an error (Status: ${statusCode}).` });
+    }
+
+    // 3. Perform a minimal content check only on successful scrapes.
+    const wordCount = content.trim().split(/\s+/).length;
+    if (wordCount < 50) { // Reduced word count threshold
+      return NextResponse.json({ status: 'broken', reason: `Page content is too short (${wordCount} words). Might be a captcha or empty page.` });
+    }
+
+    return NextResponse.json({ status: 'valid' });
 
   } catch (error: unknown) {
-    // 3. If ANY error occurs (scraping or otherwise), catch it here.
-    let reason = "An unknown error occurred.";
+    let reason = "An unknown error occurred during scraping.";
     if (error instanceof Error) {
-      // We take the clear error message from scrapeUrl's failure.
       reason = error.message;
     }
-    console.error(`Scraping or analysis failed for ${url}. Reason: ${reason}`);
-    // Return a clean, properly formatted invalid status.
+    console.error(`Scraping failed for ${url}. Reason: ${reason}`);
     return NextResponse.json({ status: 'invalid', reason: reason });
   }
 }

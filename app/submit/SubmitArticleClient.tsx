@@ -78,6 +78,14 @@ const SubmitArticleClient = ({ categories }: SubmitArticleClientProps) => {
         setCategory(draft.category || '');
         setArticleType(draft.article_type || 'Factual');
         setSources(draft.sources || []);
+        
+        // --- NEW: Load saved analysis result ---
+        if (draft.analysis_result) {
+          setVerificationResult(draft.analysis_result);
+          // Increment key to ensure re-render of the analysis component
+          setAnalysisKey(prev => prev + 1); 
+        }
+        // --- END NEW ---
       };
 
       fetchDraft();
@@ -243,23 +251,56 @@ const SubmitArticleClient = ({ categories }: SubmitArticleClientProps) => {
     }
     setIsAnalyzing(true);
     setError(null);
-    setVerificationResult(null);
-    setAnalysisKey(prevKey => prevKey + 1);
+    setVerificationResult(null); // Clear previous results
 
     try {
-      // --- NEW: Add status to each source before sending to the backend ---
-      const sourcesWithStatus = sources.map(source => ({
-        ...source,
-        status: linkStatuses[source.value]?.status,
-        reason: linkStatuses[source.value]?.reason,
-      }));
-      
-      // Pass the new sources array directly to the action
-      const result = await verifyArticle({ headline, content, sources: sourcesWithStatus, lastUpdated: new Date().toISOString() });
-      if (result.error) {
-        throw new Error(result.message);
+      const response = await fetch('/api/advanced-verify', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          headline, 
+          content, 
+          sources,
+          draftId: editingArticle?.id // --- NEW: Send draftId ---
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'The analysis service failed.');
       }
-      setVerificationResult(result);
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      setVerificationResult({}); // Reset results at the start of a new analysis
+      
+      let fullResponse = '';
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        const dataLines = chunk.split('\n\n').filter(line => line.trim().startsWith('data:'));
+        
+        for (const line of dataLines) {
+          fullResponse += line.replace('data: ', '');
+        }
+      }
+      
+      try {
+        const parsed = JSON.parse(fullResponse);
+        if (parsed.error) {
+          throw new Error(parsed.error);
+        }
+        setVerificationResult(parsed);
+        setAnalysisKey(prev => prev + 1);
+      } catch(e) {
+        console.error("Failed to parse full stream response:", fullResponse, e);
+        setError(`An error occurred during analysis: ${ (e as Error).message }`);
+      }
+
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred during analysis.';
       setError(errorMessage);
@@ -288,73 +329,78 @@ const SubmitArticleClient = ({ categories }: SubmitArticleClientProps) => {
       const finalHeadline = headline.trim() || 'Untitled Draft';
       
       const generateSlug = (text: string) => text.toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim().replace(/\s+/g, '-').replace(/[^\w-]+/g, '').replace(/--+/g, '-');
-      
-      const slug = generateSlug(finalHeadline);
 
-      // THE FIX: The 'source' column was removed, but now we have a 'sources' column.
-      const articleData = {
-        headline: finalHeadline,
+      // Start with the base data for the article.
+      const articleData: Partial<Article> & { author_id: string } = {
+        headline,
         content,
-        category: category || 'Uncategorized',
+        category,
+        article_type: articleType,
+        sources,
+        status,
         author_id: user.id,
-        status: status,
-        slug: slug,
-        // Add the new fields to be saved to the database
-        trust_score: parseTrustScore(verificationResult?.text),
-        sources: sources, // The sources array from state
+        analysis_result: verificationResult,
       };
 
-      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-      const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-      
-      let response;
-
-      if (editingArticle) {
-        response = await fetch(`${supabaseUrl}/rest/v1/articles?id=eq.${editingArticle.id}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json', 'apikey': supabaseKey, 'Authorization': `Bearer ${session.access_token}` },
-          body: JSON.stringify(articleData)
-        });
-      } else {
-        response = await fetch(`${supabaseUrl}/rest/v1/articles`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'apikey': supabaseKey, 'Authorization': `Bearer ${session.access_token}`, 'Prefer': 'return=representation' },
-          body: JSON.stringify(articleData)
-        });
-      }
-
-      if (!response.ok) {
-        const errorBody = await response.json();
-        throw new Error(errorBody.message || `Request failed: ${response.statusText}`);
-      }
-
-      const savedData = await response.json();
-      const savedArticle = Array.isArray(savedData) ? savedData[0] : savedData;
-      
-      if (!savedArticle) {
-        throw new Error('Failed to retrieve saved article data from the server.');
+      // If we are updating an existing article, provide its ID for the upsert.
+      if (editingArticle?.id) {
+        articleData.id = editingArticle.id;
       }
       
-      if (status === 'draft') {
-        if (editingArticle) {
-          setSuccessMessage('Draft updated successfully!');
-        } else {
-          setSuccessMessage('Draft saved successfully! The page will now track this draft.');
-          router.replace(`/submit?draftId=${savedArticle.id}`);
+      // If the article is being submitted for review, it MUST have a slug.
+      if (status === 'pending_review') {
+        // If it's an existing article with a slug, use that. Otherwise, generate a new one.
+        articleData.slug = editingArticle?.slug || generateSlug(headline);
+      }
+      
+      try {
+        // Use upsert to either insert a new article or update an existing one.
+        const { data, error } = await supabase
+          .from('articles')
+          .upsert(articleData)
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        if (data) {
+          if (status === 'draft') {
+            // If this was a new draft, set it as the editing article for subsequent saves.
+            if (!editingArticle) {
+              setEditingArticle(data);
+              router.replace(`/submit?draftId=${data.id}`);
+            }
+            setSuccessMessage('Draft saved successfully!');
+          } else {
+            setSuccessMessage('Article submitted successfully for review!');
+            router.push(`/article/${data.slug}`);
+          }
         }
-      } else {
-        setSuccessMessage('Article submitted! You will be redirected.');
-        router.push('/profile');
+      } catch (error: any) {
+        console.error('Submission error:', error);
+        // This specifically catches unique constraint errors (e.g., on the slug).
+        if (error.code === '23505') { 
+            setError('An article with this headline already exists. Please choose a unique headline.');
+        } else {
+            setError(`An error occurred: ${error.message}`);
+        }
+      } finally {
+        setIsSubmitting(false);
       }
-
-      // Clear the success message after 3 seconds
-      setTimeout(() => setSuccessMessage(null), 3000);
-
     } catch (e: any) {
       setError(`Error: ${e.message}`);
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const scoreCategories: { [key: string]: number } = {
+    headlineAccuracy: 20,
+    sourceQuality: 20,
+    claimSupport: 30,
+    toneAndBias: 10,
+    structureAndClarity: 10,
+    bonus: 10,
   };
 
   return (
@@ -466,33 +512,110 @@ const SubmitArticleClient = ({ categories }: SubmitArticleClientProps) => {
         </fieldset>
 
         <div className={styles.aiVerificationSection}>
-          <button type="button" onClick={handleAnalyze} disabled={isAnalyzing || !headline} className={`${styles.button} ${styles.analyzeButton}`}>
+          <button type="button" onClick={handleAnalyze} disabled={isAnalyzing || !headline || !content} className={styles.analyzeButton}>
             {isAnalyzing ? 'Analyzing...' : 'Analyze Article Credibility'}
           </button>
           
           {isAnalyzing && (
             <div className={styles.analysisContainer}>
               <div className={styles.loader}></div>
-              <p>Analyzing... this may take up to 30 seconds.</p>
+              <p>Analyzing... this may take a moment.</p>
             </div>
           )}
 
-          {parsedResponse && Object.values(parsedResponse).some(v => v) && !isAnalyzing && (
-            <div className={`${styles.analysisContainer} ${styles.structuredAnalysis}`}>
-              <h3 className={styles.analysisTitle}>AI Analysis Result</h3>
-              
-              {Object.entries(parsedResponse).map(([key, value]) => (
-                <div key={key} className={styles.analysisSection}>
-                  <h4 className={styles.analysisSectionTitle}>{key}</h4>
-                  <div className={styles.analysisSectionContent}>
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                      {value}
-                    </ReactMarkdown>
-                  </div>
+          {verificationResult && Object.keys(verificationResult).length > 0 && !verificationResult.error && (
+            <div key={analysisKey} className={styles.aiResultContainer}>
+              <h3>AI Credibility Report</h3>
+
+              {verificationResult.trustScore && (
+                <div className={styles.finalVerdictSection}>
+                    <h4>Overall Credibility Score</h4>
+                    <TrustScoreMeter score={verificationResult.trustScore.total} />
                 </div>
-              ))}
+              )}
+
+              {verificationResult.finalSummary && (
+                <div className={styles.analysisSection}>
+                  <h5>Final Summary</h5>
+                  <p>{verificationResult.finalSummary}</p>
+                </div>
+              )}
+              
+              <hr className={styles.divider} />
+
+              {verificationResult.trustScore && (
+                 <div className={styles.analysisSection}>
+                    <h5>Trust Score Breakdown</h5>
+                    <div className={styles.scoreBreakdown}>
+                        <ul>
+                            {Object.entries(verificationResult.trustScore).map(([key, value]) => (
+                                key !== 'total' && scoreCategories[key] && <li key={key}><strong>{key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}:</strong> {value as number}/{scoreCategories[key]}</li>
+                            ))}
+                        </ul>
+                    </div>
+                </div>
+              )}
+
+              {verificationResult.headlineCheck && (
+                <div className={styles.analysisSection}>
+                  <h5><span className={styles.emoji}>🔎</span> 1. Headline Check</h5>
+                  <p><strong>Assessment:</strong> {verificationResult.headlineCheck.assessment}</p>
+                  <p><strong>Explanation:</strong> {verificationResult.headlineCheck.explanation}</p>
+                </div>
+              )}
+              
+              {verificationResult.claimAnalysisTable && (
+                <div className={styles.analysisSection}>
+                  <h5><span className={styles.emoji}>⚖️</span> 2. Claim-by-Claim Analysis</h5>
+                  <table className={styles.claimsTable}>
+                    <thead>
+                      <tr>
+                        <th>Claim</th>
+                        <th>Type</th>
+                        <th>Supported?</th>
+                        <th>Source(s)</th>
+                        <th>Notes</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {verificationResult.claimAnalysisTable.map((claim: any, index: number) => (
+                        <tr key={`claim-${index}`}>
+                          <td>{claim.claim}</td>
+                          <td>{claim.claim_type}</td>
+                          <td>{claim.is_supported ? '✔️' : '❌'}</td>
+                          <td>{claim.sources}</td>
+                          <td>{claim.notes}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {verificationResult.suggestions && (
+                <div className={styles.analysisSection}>
+                  <h5><span className={styles.emoji}>💡</span> 3. Suggestions for Improvement</h5>
+                  <ul className={styles.suggestionsList}>
+                      {verificationResult.suggestions.map((suggestion: string, index: number) => (
+                          <li key={`suggestion-${index}`}>{suggestion}</li>
+                      ))}
+                  </ul>
+                </div>
+              )}
+
+              {verificationResult.references?.length > 0 && (
+                <div className={styles.analysisSection}>
+                    <h5><span className={styles.emoji}>📚</span> References</h5>
+                    <ul className={styles.sourceList}>
+                        {verificationResult.references.map((ref: any, index: number) => (
+                            <li key={`ref-${index}`}>[{ref.id}] <a href={ref.url} target="_blank" rel="noopener noreferrer">{ref.url}</a></li>
+                        ))}
+                    </ul>
+                </div>
+              )}
             </div>
           )}
+
         </div>
 
         <div className={styles.formActions}>

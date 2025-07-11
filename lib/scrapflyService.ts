@@ -20,7 +20,7 @@ const scrapfly = new ScrapflyClient({ key: scrapflyApiKey });
  * @returns The HTML content of the scraped page.
  * @throws An error if the scraping process fails.
  */
-export async function scrapeUrl(url: string): Promise<string> {
+export async function scrapeUrl(url: string) {
   try {
     // Perform the scrape and await the result.
     const result = await scrapfly.scrape(new ScrapeConfig({
@@ -29,8 +29,8 @@ export async function scrapeUrl(url: string): Promise<string> {
       render_js: true, // Enable JavaScript rendering to handle modern, dynamic websites.
       country: 'us', // Use a proxy from the United States to improve reliability.
     }));
-    // On success, return the page's HTML content.
-    return result.result.content;
+    // On success, return the full result object, not just the content.
+    return result;
   } catch (error) {
     console.error(`Scrapfly error while scraping ${url}:`, error);
     // Re-throw the error to be handled by the calling function.
