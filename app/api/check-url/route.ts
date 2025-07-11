@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { scrapeUrl } from '../../../lib/scrapflyService';
+import { ScrapeResult } from 'scrapfly-sdk';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -11,7 +12,8 @@ export async function GET(request: Request) {
 
   try {
     // 1. Scrape the URL to get the full result object.
-    const { content, statusCode } = await scrapeUrl(url);
+    const scrapeResult: ScrapeResult = await scrapeUrl(url);
+    const statusCode = scrapeResult.result.response_headers.status;
 
     // 2. Use the status code for reliable checking.
     if (statusCode === '404') {
@@ -23,7 +25,7 @@ export async function GET(request: Request) {
     }
 
     // 3. Perform a minimal content check only on successful scrapes.
-    const wordCount = content.trim().split(/\s+/).length;
+    const wordCount = scrapeResult.result.content.trim().split(/\s+/).length;
     if (wordCount < 50) { // Reduced word count threshold
       return NextResponse.json({ status: 'broken', reason: `Page content is too short (${wordCount} words). Might be a captcha or empty page.` });
     }
