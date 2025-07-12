@@ -3,30 +3,80 @@
 import { useEffect, useState } from 'react';
 import { createBrowserClient } from '@supabase/ssr';
 import Link from 'next/link';
-import { Article } from '@/types'; // Adjust path if needed ('../../types')
+import { Article, UserProfile } from '@/types'; // Import necessary types
 import styles from './profile.module.css'; // We'll create this next
 import ArticlePreview from '@/components/ArticlePreview'; // Adjust path as needed
 import { formatDate } from '@/utils/formatDate'; // Adjust path as needed
 
-// --- Placeholder User Data ---
-// This would normally come from an authentication context or session
-const placeholderUser = {
-    username: 'NewsFan123',
-    email: 'user@example.com',
+// Mockup data for demonstration
+const dummyProfile: UserProfile = {
+  id: '1',
+  username: 'DemoUser',
+  full_name: 'Demo User',
+  email: 'user@example.com',
 };
-// --- End Placeholder User Data ---
 
-
-// --- Placeholder Submitted Articles (with created_at) ---
-// Using ISO 8601 format for dates is good practice
+// This dummy data needs to conform to the Article type
 const dummySubmittedArticles: Article[] = [
-    { id: '3', headline: 'Protestors Gather Outside Parliament Building', content: 'Full details about the protest...', excerpt: '...', source: 'Anonymous', category: 'Politics', created_at: '2025-05-04T10:00:00Z', slug: 'protestors-parliament-building', status: 'Published' },
-    { id: '5', headline: 'Downtown Hosts Annual Music Festival and Park Events', content: 'Full coverage of the festival...', excerpt: '...', source: 'Citizen Report', category: 'Local', created_at: '2025-05-01T15:30:00Z', slug: 'downtown-music-festival', status: 'Published' },
-    { id: 'sub1', headline: 'Inquiry Launched into Local Water Quality Concerns', content: 'Details on the water quality investigation...', excerpt: 'Officials confirmed an investigation is underway following multiple resident complaints...', source: 'Self', category: 'Local', created_at: '2025-05-05T09:00:00Z', slug: 'local-water-quality-inquiry', status: 'Pending' },
-    { id: 'sub2', headline: 'Opinion: Why We Need More Bike Lanes', content: 'The full opinion piece content...', excerpt: 'An argument for expanding cycling infrastructure in the city...', source: 'Self', category: 'Opinion', created_at: '2025-05-03T12:00:00Z', slug: 'opinion-bike-lanes', status: 'Rejected' }, // Example of rejected item
+  {
+    id: '3',
+    headline: 'Protestors Gather Outside Parliament Building',
+    content: 'Full details about the protest...',
+    excerpt: '...',
+    // FIX: Changed 'source' to 'sources' and made it an array or null
+    sources: null, 
+    category: 'Politics',
+    created_at: '2025-05-04T10:00:00Z',
+    slug: 'protestors-parliament-building',
+    status: 'Published',
+    // FIX: Add missing required properties
+    author_id: '1',
+    last_updated: null,
+    article_type: 'Factual'
+  },
+  {
+    id: '5',
+    headline: 'Downtown Hosts Annual Music Festival and Park Events',
+    content: 'Full coverage of the festival...',
+    excerpt: '...',
+    sources: null,
+    category: 'Local',
+    created_at: '2025-05-01T15:30:00Z',
+    slug: 'downtown-music-festival',
+    status: 'Published',
+    author_id: '1',
+    last_updated: null,
+    article_type: 'Factual'
+  },
+  {
+    id: 'sub1',
+    headline: 'Inquiry Launched into Local Water Quality Concerns',
+    content: 'Details on the water quality investigation...',
+    excerpt: 'Officials confirmed an investigation is underway following multiple resident complaints...',
+    sources: null,
+    category: 'Local',
+    created_at: '2025-05-05T09:00:00Z',
+    slug: 'local-water-quality-inquiry',
+    status: 'Pending',
+    author_id: '1',
+    last_updated: null,
+    article_type: 'Factual'
+  },
+  {
+    id: 'sub2',
+    headline: 'Opinion: Why We Need More Bike Lanes',
+    content: 'The full opinion piece content...',
+    excerpt: 'An argument for expanding cycling infrastructure in the city...',
+    sources: null,
+    category: 'Opinion',
+    created_at: '2025-05-03T12:00:00Z',
+    slug: 'opinion-bike-lanes',
+    status: 'Rejected',
+    author_id: '1',
+    last_updated: null,
+    article_type: 'Opinion'
+  }, // Example of rejected item
 ];
-// --- End Placeholder Submitted Articles ---
-
 
 // Helper function to get status class
 const getStatusClass = (status?: Article['status']) => {
