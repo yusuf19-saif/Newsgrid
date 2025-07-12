@@ -1,142 +1,79 @@
-import { supabaseAdmin } from '@/lib/supabaseServer'; // Or your server-side client
-import { notFound } from 'next/navigation';
-import { Article } from '@/types'; // Import your main Article type
-import ArticlePreview from '@/components/ArticlePreview'; // Import ArticlePreview
-import styles from './profile.module.css'; // Let's assume you'll create this for styling
-import { createSupabaseServerComponentClient } from '@/lib/supabaseServerComponentClient';
-// You might want a specific type for Profile if it differs significantly or for clarity
-// import { Profile } from '@/types'; // Assuming you might create a Profile type
+import { createSupabaseServerComponentClient } from "@/lib/supabaseServerComponentClient";
+import ArticlePreview from "@/components/ArticlePreview";
+import styles from './profile.module.css';
+import { Article } from "@/types"; // Import Article type
 
-interface ProfilePageParams {
-  userId: string;
-}
+type ProfilePageProps = {
+  params: {
+    userId: string;
+  };
+};
 
-// Define a simple type for the profile data we expect to fetch
-interface UserProfile {
-  id: string;
-  full_name: string;
-  // Add any other fields from your profiles table you want to display
-  // e.g., created_at, first_name, last_name
-}
+async function getProfileAndArticles(userId: string) {
+  const supabase = createSupabaseServerComponentClient();
 
-async function getUserProfile(userId: string): Promise<UserProfile | null> {
-  if (!userId) return null;
-
-  try {
-    const { data, error } = await supabaseAdmin
-      .from('profiles')
-      .select('id, full_name') // Select only the fields you need for now
-      .eq('id', userId)
-      .single();
-
-    if (error) {
-      console.error('Error fetching user profile:', error);
-      return null;
-    }
-    return data as UserProfile; // Cast to UserProfile
-  } catch (err) {
-    console.error('Catch error fetching user profile:', err);
-    return null;
-  }
-}
-
-// New function to fetch articles by author
-async function getArticlesByAuthor(authorId: string): Promise<Article[]> {
-  if (!authorId) return [];
-  try {
-    const { data, error } = await supabaseAdmin
-      .from('articles')
-      .select(`
-        id,
-        headline,
-        content,
-        excerpt,
-        sources,
-        trust_score,
-        category,
-        slug,
-        created_at,
-        status,
-        author_id,
-        profiles ( full_name ) 
-      `)
-      .eq('author_id', authorId)
-      // .eq('status', 'Published') // REMOVED: Show all statuses for the author's own profile
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      // The console.error here was logging an empty object.
-      // Let's make it more descriptive by logging the actual error.
-      console.error(`Error fetching articles for author ${authorId}:`, error);
-      return [];
-    }
-
-    // Transform data to include author_full_name directly
-    // This is consistent with how your other article fetches work
-    const transformedArticles = data ? data.map(article => {
-      let authorFullName = 'Unknown Author';
-      if (article.profiles && typeof article.profiles === 'object' && 'full_name' in article.profiles) {
-        authorFullName = (article.profiles as { full_name: string }).full_name;
-      }
-      const { profiles, ...restOfArticle } = article;
-      return {
-        ...restOfArticle,
-        author_full_name: authorFullName
-      };
-    }) : [];
-    
-    return transformedArticles;
-
-  } catch (err) {
-    console.error(`Catch error fetching articles for author ${authorId}:`, err);
-    return [];
-  }
-}
-
-export default async function UserProfilePage({ params }: { params: Promise<ProfilePageParams> }) {
-  const { userId } = await params;
-  
-  // Create a supabase client to get the currently logged-in user
-  const supabase = await createSupabaseServerComponentClient();
-  const { data: { user: loggedInUser } } = await supabase.auth.getUser();
-
-  // Determine if the logged-in user is the owner of this profile
-  const isOwner = loggedInUser?.id === userId;
-
-  // Fetch profile and articles in parallel
-  const [userProfile, articlesByAuthor] = await Promise.all([
-    getUserProfile(userId),
-    getArticlesByAuthor(userId) // userId is the authorId here
+  const [profileResponse, articlesResponse, sessionUserResponse] = await Promise.all([
+    supabase.from('profiles').select('*').eq('id', userId).single(),
+    supabase.from('articles').select('*').eq('author_id', userId).order('created_at', { ascending: false }),
+    supabase.auth.getUser()
   ]);
 
-  if (!userProfile) {
-    notFound(); // Or display a "Profile not found" message
+  const { data: profile, error: profileError } = profileResponse;
+  const { data: rawArticles, error: articlesError } = articlesResponse;
+  const { data: { user: sessionUser } } = sessionUserResponse;
+
+  if (profileError) {
+    console.error(`Error fetching profile for user ${userId}:`, profileError);
+  }
+  if (articlesError) {
+    console.error(`Error fetching articles for user ${userId}:`, articlesError);
   }
 
-  // Filter articles for the owner view if needed
-  const articlesToDisplay = isOwner 
-    ? articlesByAuthor // Show all articles to the owner
-    : articlesByAuthor.filter(article => article.status === 'Published'); // Show only published to others
+  // --- FIX: Normalize article data ---
+  const articles: Article[] = (rawArticles || []).map((article: any) => ({
+    ...article,
+    author_full_name: profile?.full_name || 'Anonymous',
+    sources: Array.isArray(article.sources) ? article.sources : null,
+    // Ensure all required fields are present, even if null
+    last_updated: article.last_updated || null, 
+    isOwner: sessionUser ? sessionUser.id === article.author_id : false,
+  }));
+
+  return { profile, articles, sessionUser };
+}
+
+export default async function ProfilePage({ params }: ProfilePageProps) {
+  const { userId } = params;
+  const { profile, articles, sessionUser } = await getProfileAndArticles(userId);
+
+  if (!profile) {
+    return <div>Profile not found.</div>;
+  }
+  
+  const isOwnProfile = sessionUser?.id === userId;
 
   return (
-    <div className={styles.profileContainer}> {/* Added a container class */}
-      <section className={styles.profileHeader}>
-        <h1>{userProfile.full_name}'s Articles</h1>
-        {isOwner && <p className={styles.ownerNotice}>You are viewing your own profile. You can manage your articles below.</p>}
-      </section>
+    <div className={styles.profileContainer}>
+      <header className={styles.profileHeader}>
+        <h1 className={styles.username}>{profile.username}</h1>
+        <p className={styles.fullName}>{profile.full_name}</p>
+        {isOwnProfile && <p className={styles.email}>{sessionUser?.email}</p>}
+        {/* Add more profile details if available */}
+      </header>
 
       <section className={styles.articlesSection}>
-        {articlesToDisplay.length > 0 ? (
-          <div className={styles.articlesGrid}> {/* Reuse homepage grid style if desired */}
-            {articlesToDisplay.map((article) => (
-              <ArticlePreview key={article.id} article={article} isOwner={isOwner} />
-            ))}
-          </div>
-        ) : isOwner ? (
-          <p>You have not submitted any articles yet. <a href="/submit">Submit one now!</a></p>
-        ) : (
-          <p>This author has not published any articles yet.</p>
-        )}
+        <h2 className={styles.sectionTitle}>
+          {isOwnProfile ? 'Your Articles' : `Articles by ${profile.username}`}
+        </h2>
+        <div className={styles.articlesGrid}>
+          {articles.length > 0 ? (
+            articles.map(article => (
+              <ArticlePreview key={article.id} article={article} />
+            ))
+          ) : (
+            <p>No articles published yet.</p>
+          )}
+        </div>
       </section>
     </div>
   );
