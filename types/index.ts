@@ -22,8 +22,8 @@ export type Article = {
   last_updated: string | null;
   slug: string | null;
   status: string; // <-- This is now required
-  article_type: string;
-  analysis_result: any | null; // You might want to define a stronger type for this
+  article_type?: string; // Should be optional
+  analysis_result?: any | null; // Should be optional
   // This allows for the joined author's username
   profiles?: {
     username: string;
