@@ -1,60 +1,40 @@
 import Link from 'next/link';
-import { Article } from '@/types'; // Ensure Article type is correctly imported
 import styles from './ArticlePreview.module.css';
-import ArticleManagementButtons from './ArticleManagementButtons'; // Import the new component
+import { Article } from '@/types';
+import { formatDate } from '@/utils/formatDate';
 
-// Props interface should NOT include formatDate
+// Define the component's props
 interface ArticlePreviewProps {
-  article: Article;
-  isOwner: boolean; // We expect this prop to be passed
+  article: Article & { isOwner?: boolean, author_full_name?: string };
 }
 
-// Component signature should NOT destructure formatDate from props
-export default function ArticlePreview({ article, isOwner }: ArticlePreviewProps) {
-  if (!article) {
-    return <p>Article data is not available.</p>; // Or some other placeholder
-  }
-
-  // Helper function to format the date
-  function formatDate(dateString: string | undefined): string {
-    if (!dateString) return 'Unknown date';
-    try {
-      return new Date(dateString).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric'
-      });
-    } catch (e) {
-      console.error("Error formatting date:", e);
-      return dateString;
-    }
-  }
-
+// No longer need the `isOwner` prop separately, it's part of the article object
+export default function ArticlePreview({ article }: ArticlePreviewProps) {
+  const authorName = article.author_full_name || 'Anonymous';
+  
   return (
-    <article className={styles.article}>
-      <div className={styles.cardHeader}>
-        <h2 className={styles.headline}>
-          <Link href={`/article/${article.slug}`} className={styles.link}>
+    <div className={styles.card}>
+      <div className={styles.cardContent}>
+        <span className={styles.category}>{article.category}</span>
+        <h2 className={styles.title}>
+          <Link href={`/article/${article.slug}`}>
             {article.headline}
-      </Link>
+          </Link>
         </h2>
-        {isOwner && <div className={styles.statusPill}>{article.status}</div>}
+        <p className={styles.excerpt}>{article.excerpt || "No excerpt available."}</p>
+        <div className={styles.footer}>
+          <span className={styles.author}>By: {authorName}</span>
+          <span className={styles.date}>Posted: {formatDate(article.created_at)}</span>
+        </div>
+        {/* Example of using the isOwner flag */}
+        {article.isOwner && (
+          <div className={styles.ownerActions}>
+            <Link href={`/submit?draftId=${article.id}`} className={styles.editButton}>
+              Edit
+            </Link>
+          </div>
+        )}
       </div>
-      {article.category && (
-        <div className={styles.category}>{article.category}</div>
-      )}
-      <p className={styles.excerpt}>{article.excerpt || 'No excerpt available.'}</p>
-      <div className={styles.meta}>
-        <span>By: {article.author_full_name || 'Anonymous'}</span>
-        <span>Posted: {formatDate(article.created_at)}</span>
-      </div>
-      {/* Conditionally render the management buttons */}
-      {isOwner && (
-        <ArticleManagementButtons 
-          articleSlug={article.slug}
-          currentStatus={article.status || 'draft'} 
-        />
-      )}
-    </article>
+    </div>
   );
 }

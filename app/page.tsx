@@ -21,49 +21,52 @@ function formatDate(dateString: string | undefined): string {
 }
 
 // This function fetches the articles from your database.
-async function getArticles() {
+async function getArticlesAndUser() {
   const supabase = createSupabaseServerComponentClient();
 
-  // Fetch articles that are 'Published' and join with the author's profile
-  const { data, error } = await supabase
-    .from("articles")
-    .select(`
-      *,
-      author:profiles (
-        full_name
-      )
-    `)
-    .eq("status", "Published")
-    .order("created_at", { ascending: false });
+  // Fetch both the articles and the current user in parallel
+  const [articlesResponse, userResponse] = await Promise.all([
+    supabase
+      .from("articles")
+      .select(`
+        *,
+        author:profiles (
+          full_name
+        )
+      `)
+      .eq("status", "Published")
+      .order("created_at", { ascending: false }),
+    supabase.auth.getUser()
+  ]);
 
-  if (error) {
-    console.error("Error fetching articles:", error);
-    return [];
+  const { data: rawArticles, error: articlesError } = articlesResponse;
+  const { data: { user } } = userResponse;
+
+  if (articlesError) {
+    console.error("Error fetching articles:", articlesError);
+    return { articles: [], user: null };
   }
 
-  if (!data) {
-    return [];
+  if (!rawArticles) {
+    return { articles: [], user: null };
   }
 
-  // --- FIX: Normalize the 'sources' data ---
-  // The 'any' type is used here to handle the inconsistent data from the DB
-  const articles: Article[] = data.map((article: any) => ({
+  // Normalize the data and add the isOwner flag
+  const articles: Article[] = rawArticles.map((article: any) => ({
     ...article,
     author_full_name: article.author?.full_name || 'Anonymous',
-    // Ensure sources is always an array or null, never a string
     sources: Array.isArray(article.sources) ? article.sources : null,
+    // --- FIX: Add the isOwner property ---
+    isOwner: user ? user.id === article.author_id : false
   }));
 
-  return articles;
+  return { articles, user };
 }
 
 
 export default async function HomePage() {
-  const supabase = await createSupabaseServerComponentClient();
-  const { data: { session } } = await supabase.auth.getSession();
-  const userId = session?.user?.id;
-
-  const articles = await getArticles();
+  // We don't need the user here directly, but fetching it sets the `isOwner` flag
+  const { articles } = await getArticlesAndUser();
 
   return (
     <div className={styles.homeContainer}>
@@ -71,6 +74,7 @@ export default async function HomePage() {
       <div className={styles.articlesGrid}>
         {articles.length > 0 ? (
           articles.map((article) => (
+            // The `isOwner` prop is now implicitly on the article object
             <ArticlePreview key={article.id} article={article} />
           ))
         ) : (
