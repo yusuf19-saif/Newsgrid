@@ -350,26 +350,21 @@ const SubmitArticleClient = ({ categories }: SubmitArticleClientProps) => {
         articleData.id = editingArticle.id;
       }
       
-      // A slug is required by the database and must be unique.
       let slugToSave;
 
-      // For existing drafts, preserve the slug unless it's being re-submitted.
-      // For new articles or any submission, generate a slug from the headline.
-      if (editingArticle?.slug && status === 'draft') {
-        slugToSave = editingArticle.slug;
-      } else {
-        slugToSave = generateSlug(headline);
-      }
-      
-      // If submitting for review, a valid slug from a real headline is mandatory.
-      if (status === 'pending_review' && !slugToSave) {
-        throw new Error("Invalid headline. Please provide a more descriptive headline to submit for review.");
-      }
-
-      // If this is a new draft and the headline was empty/invalid, create a unique placeholder slug.
-      if (status === 'draft' && !editingArticle && !slugToSave) {
-        const uniqueSuffix = Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
-        slugToSave = `draft-${uniqueSuffix}`;
+      if (status === 'draft') {
+        // For drafts, use the existing slug or create a placeholder if it's a new, empty draft.
+        slugToSave = editingArticle?.slug || generateSlug(headline);
+        if (!slugToSave) {
+          const uniqueSuffix = Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+          slugToSave = `draft-${uniqueSuffix}`;
+        }
+      } else { // status === 'pending_review'
+        // For submissions, use the existing slug if editing, otherwise generate a new one.
+        slugToSave = editingArticle?.slug || generateSlug(headline);
+        if (!slugToSave) {
+          throw new Error("Invalid headline. Please provide a more descriptive headline to submit for review.");
+        }
       }
       
       articleData.slug = slugToSave;
