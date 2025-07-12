@@ -314,6 +314,7 @@ const SubmitArticleClient = ({ categories }: SubmitArticleClientProps) => {
 
   const handleSubmit = async (status: 'draft' | 'pending_review') => {
     try {
+      console.log(`[Submit] Attempting to ${status}...`);
       setIsSubmitting(true);
       setError(null);
       setSuccessMessage(null);
@@ -321,11 +322,14 @@ const SubmitArticleClient = ({ categories }: SubmitArticleClientProps) => {
       const { data: { session } } = await supabase.auth.getSession();
 
       if (!session) {
+        console.error('[Submit] Error: User is not logged in.');
         throw new Error('You must be logged in to save an article.');
       }
       const user = session.user;
+      console.log(`[Submit] User authenticated: ${user.id}`);
 
       if (status === 'pending_review' && (!category || !content.trim() || !headline.trim())) {
+        console.error('[Submit] Error: Missing required fields for review.');
         throw new Error('Headline, content, and category are required to submit for review.');
       }
 
@@ -333,7 +337,25 @@ const SubmitArticleClient = ({ categories }: SubmitArticleClientProps) => {
       
       const generateSlug = (text: string) => text.toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim().replace(/\s+/g, '-').replace(/[^\w-]+/g, '').replace(/--+/g, '-');
 
-      // Start with the base data for the article.
+      let slugToSave;
+
+      if (status === 'pending_review') {
+        console.log('[Submit] Status is "pending_review". Generating slug from headline.');
+        slugToSave = generateSlug(headline);
+        if (!slugToSave) {
+          console.error('[Submit] Error: Headline is empty or invalid for slug generation.');
+          throw new Error("Invalid headline. Please provide a more descriptive headline to submit for review.");
+        }
+      } else { // status === 'draft'
+        console.log('[Submit] Status is "draft". Using existing slug or creating a placeholder.');
+        slugToSave = editingArticle?.slug || generateSlug(headline);
+        if (!slugToSave) {
+          const uniqueSuffix = Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+          slugToSave = `draft-${uniqueSuffix}`;
+        }
+      }
+      console.log(`[Submit] Slug to be saved: "${slugToSave}"`);
+
       const articleData: Partial<Article> & { author_id: string } = {
         headline,
         content,
@@ -343,45 +365,31 @@ const SubmitArticleClient = ({ categories }: SubmitArticleClientProps) => {
         status,
         author_id: user.id,
         analysis_result: verificationResult,
+        slug: slugToSave,
       };
 
-      // If we are updating an existing article, provide its ID for the upsert.
       if (editingArticle?.id) {
         articleData.id = editingArticle.id;
       }
       
-      let slugToSave;
-
-      if (status === 'draft') {
-        // For drafts, use the existing slug or create a placeholder if it's a new, empty draft.
-        slugToSave = editingArticle?.slug || generateSlug(headline);
-        if (!slugToSave) {
-          const uniqueSuffix = Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
-          slugToSave = `draft-${uniqueSuffix}`;
-        }
-      } else { // status === 'pending_review'
-        // For submissions, use the existing slug if editing, otherwise generate a new one.
-        slugToSave = editingArticle?.slug || generateSlug(headline);
-        if (!slugToSave) {
-          throw new Error("Invalid headline. Please provide a more descriptive headline to submit for review.");
-        }
-      }
-      
-      articleData.slug = slugToSave;
+      console.log('[Submit] Data prepared for upsert:', articleData);
       
       try {
-        // Use upsert to either insert a new article or update an existing one.
         const { data, error } = await supabase
           .from('articles')
           .upsert(articleData)
           .select()
           .single();
 
-        if (error) throw error;
+        if (error) {
+          console.error('[Submit] Supabase upsert error:', error);
+          throw error;
+        }
+
+        console.log('[Submit] Upsert successful. Response data:', data);
 
         if (data) {
           if (status === 'draft') {
-            // If this was a new draft, set it as the editing article for subsequent saves.
             if (!editingArticle) {
               setEditingArticle(data);
               router.replace(`/submit?draftId=${data.id}`);
@@ -393,8 +401,7 @@ const SubmitArticleClient = ({ categories }: SubmitArticleClientProps) => {
           }
         }
       } catch (error: any) {
-        console.error('Submission error:', error);
-        // This specifically catches unique constraint errors (e.g., on the slug).
+        console.error('[Submit] CATCH block after Supabase call:', error);
         if (error.code === '23505') { 
             setError('An article with this headline already exists. Please choose a unique headline.');
         } else {
@@ -404,8 +411,10 @@ const SubmitArticleClient = ({ categories }: SubmitArticleClientProps) => {
         setIsSubmitting(false);
       }
     } catch (e: any) {
+      console.error('[Submit] CATCH block for entire function:', e);
       setError(`Error: ${e.message}`);
     } finally {
+      console.log('[Submit] Submission process finished.');
       setIsSubmitting(false);
     }
   };

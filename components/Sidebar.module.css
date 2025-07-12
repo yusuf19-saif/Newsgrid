@@ -1,42 +1,108 @@
 .sidebar {
-  width: 260px; /* Wider for more space */
-  background-color: var(--background-secondary); /* THEME UPDATE: Was --background-component */
-  padding: 25px 20px;
-  border-right: 1px solid var(--border-primary);   /* THEME UPDATE: Was --border-light */
-  transition: background-color 0.3s ease, border-color 0.3s ease; /* THEME UPDATE: Added transitions */
+  background-color: var(--background-secondary);
+  border-right: 1px solid var(--border-primary);
+  width: 250px; /* Fixed width for the sidebar */
   flex-shrink: 0; /* Prevent sidebar from shrinking */
-  overflow-y: auto; /* Allow sidebar to scroll if its content is too long */
-  /* No shadow on sidebar itself usually, content has shadow */
+  padding: 1.5rem;
+  transition: transform 0.3s ease-in-out;
+  z-index: 1020;
 }
 
-.sidebar nav ul {
-  list-style-type: none;
+.sidebarHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 1rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid var(--border-secondary);
+  font-weight: bold;
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem; /* Space between nav sections */
+}
+
+.navList {
+  list-style: none;
   padding: 0;
   margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem; /* Space between items in a list */
 }
 
-.sidebar nav li {
-  margin-bottom: 8px; /* Tighter spacing */
+.navSectionTitle {
+    font-size: 0.8rem;
+    font-weight: bold;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0 0.5rem;
+    margin-bottom: 0.5rem;
 }
 
-.sidebar nav a {
+.navLink {
+  color: var(--text-secondary);
   text-decoration: none;
-  color: var(--text-secondary); /* THEME UPDATE: Was --text-body, now uses a more appropriate secondary text color */
   display: block;
-  padding: 14px 20px; /* Increased padding for larger clickable area */
-  border-radius: var(--border-radius-medium, 8px); /* THEME UPDATE: Added fallback for safety */
-  font-weight: 600; /* Semi-bold */
-  font-size: 1rem; /* Increased font size */
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
   transition: background-color 0.2s ease, color 0.2s ease;
 }
 
-.sidebar nav a:hover {
-  background-color: var(--background-accent); /* THEME UPDATE: Was --primary-accent-hover. Using a subtle accent for hover. */
-  color: var(--link-primary);           /* THEME UPDATE: Was --text-on-primary. Using themed link color for text on hover. */
+.navLink:hover {
+  background-color: var(--background-hover);
+  color: var(--text-primary);
 }
 
-.sidebar nav a.active { /* Needs JS for active state */
-  background-color: var(--link-primary);  /* THEME UPDATE: Was --primary-accent. Using link color as active background. */
-  color: var(--button-primary-text);    /* THEME UPDATE: Was --text-on-primary. Using primary button text (typically white) for active link text. */
-  font-weight: 700;
+.navLink.active {
+  background-color: var(--background-accent);
+  color: var(--text-primary);
+  font-weight: bold;
+}
+
+.signOutForm {
+    margin: 0;
+    padding: 0;
+}
+
+.signOutButton {
+    /* Inherit styling from navLink for consistency */
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-secondary);
+    text-decoration: none;
+    display: block;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    transition: background-color 0.2s ease, color 0.2s ease;
+    font-size: inherit; /* Ensure font size matches links */
+    font-family: inherit;
+}
+.signOutButton:hover {
+    background-color: var(--background-hover);
+    color: var(--text-primary);
+}
+
+
+/* --- Mobile & Tablet Styles --- */
+@media (max-width: 1024px) {
+  .sidebar {
+    position: fixed; /* Take it out of the document flow */
+    top: 0;
+    left: 0;
+    bottom: 0;
+    height: 100vh;
+    transform: translateX(-100%); /* Hide it off-screen by default */
+    border-right: 1px solid var(--border-primary); /* Keep border */
+  }
+
+  .sidebar.open {
+    transform: translateX(0); /* Slide it in when open */
+  }
 }

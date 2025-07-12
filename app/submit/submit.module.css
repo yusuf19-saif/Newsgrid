@@ -34,6 +34,18 @@
   margin: 0;
 }
 
+/* --- NEW: Media query for card header --- */
+@media (max-width: 600px) {
+  .cardHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  .cardTitle {
+    font-size: 1.5rem;
+  }
+}
+
 /* The main "Review & Analyze" button */
 .reviewButton {
   padding: 0.75rem 1.5rem;
@@ -111,6 +123,15 @@
   margin-top: 1rem; /* Space above the metadata section */
 }
 
+/* --- NEW: Media query for metadata grid --- */
+@media (max-width: 600px) {
+  .metadataGrid {
+    grid-template-columns: 1fr; /* Stack to a single column on mobile */
+    gap: 1.5rem;
+  }
+}
+
+
 /* A full-width container for the sources textarea */
 .sourcesGroup {
   grid-column: 1 / -1; /* Make this span both columns */
@@ -162,6 +183,19 @@
   grid-template-columns: 1fr auto; /* Main content and a score column */
   gap: 2rem;
   align-items: flex-start; /* Align to the top */
+}
+
+/* --- NEW: Media query for results container on tablets and mobile --- */
+@media (max-width: 1024px) {
+  .resultsContainer {
+    grid-template-columns: 1fr; /* Stack to single column */
+  }
+  .scoreContainer {
+    position: static; /* Un-stick the score meter */
+    grid-row: 1; /* Move score to the top on mobile */
+    width: 100%;
+    justify-content: center;
+  }
 }
 
 /* Container for the left-hand side cards */
@@ -1154,18 +1188,24 @@
 }
 
 .urlInputGroup {
-  display: flex; /* Use Flexbox for alignment */
-  gap: 0.5rem;   /* Add a small gap between the input and the button */
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
 }
 
 .urlInputGroup input {
-  flex-grow: 1; /* Allow the input to take up the available space */
-  border-radius: var(--border-radius-medium) 0 0 var(--border-radius-medium); /* Adjust border radius */
+  flex-grow: 1; /* Allows input to take up available space */
+  min-width: 0; /* Important for flex-shrink to work correctly */
 }
 
 .urlInputGroup button {
-  flex-shrink: 0; /* Prevent the button from shrinking */
-  border-radius: 0 var(--border-radius-medium) var(--border-radius-medium) 0; /* Adjust border radius */
-  /* Remove the transform on hover for this specific button if it causes layout jumps */
-  transform: none;
+  flex-shrink: 0; /* Prevents the button from shrinking */
+}
+
+/* --- NEW: Media query for the URL input group --- */
+@media (max-width: 600px) {
+  .urlInputGroup {
+    flex-direction: column;
+    align-items: stretch; /* Make items take full width */
+  }
 }

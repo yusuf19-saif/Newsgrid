@@ -1,6 +1,4 @@
 import { createClient } from '@supabase/supabase-js';
-import { createServerClient, type CookieOptions } from '@supabase/ssr';
-import { cookies } from 'next/headers';
 
 // Ensure your environment variables are correctly defined in .env.local
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -15,66 +13,15 @@ if (!supabaseServiceRoleKey) {
 }
 
 // Create a single supabase client for server-side operations (admin privileges)
-// Be cautious using the service role key; it bypasses RLS.
+// This client has full access and bypasses RLS. Use with caution.
 export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey, {
   auth: {
-    // Required for server-side operations
+    // For server-side operations, session persistence is not needed.
     autoRefreshToken: false,
     persistSession: false,
   },
 });
 
-// You could also export a client using the anon key if needed for RLS-aware server operations
-// const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-// export const supabase = createClient(supabaseUrl, supabaseAnonKey);
-
-export const createSupabaseServerClient = async () => {
-  const cookieStore = await cookies();
-  return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name: string) { return cookieStore.get(name)?.value; },
-        set(name: string, value: string, options: CookieOptions) { try { cookieStore.set({ name, value, ...options }); } catch (error) { /* Loglevel debug */ console.log(`Error setting cookie: ${name}`, error); } },
-        remove(name: string, options: CookieOptions) { try { cookieStore.delete({ name, ...options }); } catch (error) { /* Loglevel debug */ console.log(`Error removing cookie: ${name}`, error); } },
-      },
-    }
-  );
-};
-
-export async function checkUserRole(userId: string, roleName: string): Promise<boolean> {
-  if (!userId) {
-    console.warn("checkUserRole called with no userId");
-    return false;
-  }
-
-  // Using the user's client, RLS must be set up on 'user_roles'
-  const supabase = await createSupabaseServerClient(); 
-
-  console.log(`Checking role for userId: ${userId}, roleName: ${roleName}`);
-
-  const { error, count } = await supabase
-    .from('user_roles') // Make sure this table name is exact
-    .select('*', { count: 'exact', head: true }) // Fetching a column isn't needed if only checking existence. head: true is fine here.
-    .eq('user_id', userId)    // Ensure 'user_id' is the correct column name
-    .eq('role', roleName);    // Ensure 'role' is the correct column name
-
-  if (error) {
-    console.error(`Supabase error checking user role for ${userId} / ${roleName}:`, error.message);
-    return false;
-  }
-
-  console.log(`Role check for ${userId} / ${roleName} - Count: ${count}`);
-  
-  return count !== null && count > 0;
-}
-
-// RLS Policy for user_roles (reminder - run in Supabase SQL Editor):
-/*
-CREATE POLICY "Users can view their own roles"
-ON public.user_roles
-FOR SELECT
-TO authenticated
-USING (auth.uid() = user_id);
-*/
+// The createSupabaseServerClient and checkUserRole functions that used next/headers
+// have been removed from this file to prevent client-side import errors.
+// createSupabaseServerClient now resides in its own file for server component usage.

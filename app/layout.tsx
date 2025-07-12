@@ -1,18 +1,10 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import Header from "@/components/Header"; // Assuming Header is in components
-import Footer from "@/components/Footer"; // Assuming Footer is in components
-import { Sidebar } from "@/components/Sidebar"; // Changed to a named import
 import "./globals.css";
-import { ThemeProvider } from "@/contexts/ThemeContext"; // Import ThemeProvider
-import styles from './layout.module.css'; // Import the new CSS module
-
-// New imports for Supabase auth
-import { cookies } from 'next/headers';
-import { createServerClient } from '@supabase/ssr';
-import { checkUserRole } from '@/lib/authUtils';
+import { ThemeProvider } from "@/contexts/ThemeContext";
 import { createSupabaseServerComponentClient } from '../lib/supabaseServerComponentClient';
-import { Database } from '../types/supabase';
+import { checkUserRole } from '@/lib/authUtils';
+import AppWrapper from "./AppWrapper";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -21,48 +13,24 @@ export const metadata: Metadata = {
   description: "Open Platform for Factual News",
 };
 
-// Layout is now an async function
+// Layout is an async Server Component again
 export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const cookieStore = await cookies();
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value;
-        },
-      },
-    }
-  );
-
+  const supabase = createSupabaseServerComponentClient();
   const { data: { user } } = await supabase.auth.getUser();
   const isAdmin = user ? await checkUserRole(user.id, 'admin') : false;
 
   return (
     <html lang="en">
       <body className={inter.className}>
-        <ThemeProvider> {/* Wrap your main content with ThemeProvider */}
-          <div className={styles.appContainer}>
-            <Header />
-            <div className={styles.mainContentWrapper}>
-              {/* 
-                We might only want to show the sidebar if a user is logged in.
-                The Sidebar component itself returns null if no user, which is one way.
-                Or, you could fetch user here and conditionally render Sidebar.
-                For simplicity now, Sidebar handles its own visibility based on user session.
-              */}
-              <Sidebar user={user} isAdmin={isAdmin} /> {/* Add the Sidebar component */}
-              <main className={styles.pageContent}>
-                {children} {/* This is where your page content will go */}
-                <Footer /> {/* Footer is now at the end of the scrollable content */}
-              </main>
-            </div>
-          </div>
+        <ThemeProvider>
+          {/* AppWrapper is a client component that handles state */}
+          <AppWrapper user={user} isAdmin={isAdmin}>
+            {children}
+          </AppWrapper>
         </ThemeProvider>
       </body>
     </html>

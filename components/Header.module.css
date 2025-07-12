@@ -1,30 +1,22 @@
 /* my-app/components/Header.module.css */
 .header {
   display: flex;
-  /* justify-content: space-between; << We'll let children manage space for centering */
+  justify-content: space-between; /* This is key */
   align-items: center; 
-  padding: 0.5rem 1.5rem; 
+  padding: 0 1.5rem; /* Vertical padding removed, relying on fixed height */
   background-color: var(--background-secondary);
   border-bottom: 1px solid var(--border-primary);
-  /* Consider adding a fixed height if you prefer, but padding is often more flexible */
-  /* height: 60px; */ /* Example fixed height */
-  transition: background-color 0.3s ease, border-color 0.3s ease;
-  
-  /* --- LAYOUT & GAP FIX --- */
-  flex-shrink: 0; /* Prevent header from shrinking */
-  height: 65px; /* Define a fixed height for predictability */
+  height: 65px; 
   width: 100%;
-  box-sizing: border-box; /* IMPORTANT: Fixes the 1px gap issue */
-
-  /* The position:sticky, top, and z-index properties are no longer needed here */
+  box-sizing: border-box; 
+  position: relative; /* Needed for z-index and positioning of mobile nav */
+  z-index: 1000;
 }
 
-.logoAndToggler {
+.headerLeft, .headerRight {
   display: flex;
   align-items: center;
-  gap: 1rem; /* Space between logo and mobile toggler if they are side-by-side */
-  margin-right: auto; /* << PUSHES other content to the right, good for left-aligning logo */
-  flex-shrink: 0; /* Prevent logo from shrinking if space is tight */
+  gap: 1.5rem; /* Spacing between items in the left/right groups */
 }
 
 .logoContainer a {
@@ -35,26 +27,37 @@
   transition: color 0.3s ease;
 }
 
-/* Styles for mobile menu button if you have them */
+/* Styles for mobile menu button */
 .mobileMenuButton {
-  /* ... your existing styles for the hamburger button ... */
-  display: none; /* Assuming it's hidden on desktop by default */
-  /* THEME UPDATE: If your button has background/border/color, update those too */
-  /* Example: background-color: transparent; color: var(--text-primary); border: none; */
+  display: none; /* Hidden on desktop */
+  flex-direction: column;
+  justify-content: space-around;
+  width: 2rem;
+  height: 2rem;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  z-index: 10;
 }
-/* Styles for hamburger icon lines if you have them */
+
+.mobileMenuButton:focus {
+  outline: none;
+}
+
 .hamburgerIconLine {
-  /* ... your existing styles ... */
-  /* THEME UPDATE: Typically change background-color of these lines */
-  /* Example: background-color: var(--text-primary); */
+  width: 2rem;
+  height: 0.25rem;
+  background: var(--text-primary);
+  border-radius: 10px;
+  transition: all 0.3s linear;
+  position: relative;
+  transform-origin: 1px;
 }
 
-
-.navLinks { /* This is the container for Home, Submit Article, etc. */
-  display: flex; 
-  /* justify-content: center; */ /* Potentially redundant if ul uses margin: 0 auto */
+.navLinks { 
+  display: flex;
   align-items: center;
-  flex-grow: 1; 
 }
 
 .navLinks ul { 
@@ -110,17 +113,9 @@
   transform-origin: bottom left; 
 }
 
-
-.headerRightGroup { 
-  display: flex;
-  align-items: center;
-  gap: 1rem; 
-  margin-left: auto; /* << PUSHES this group to the far right */
-  flex-shrink: 0; /* Prevent right group from shrinking if space is tight */
-}
-
+/* Remove the old .headerRightGroup if it exists */
 .searchContainer {
-  /* No specific flex properties needed here if the form handles it */
+  /* No flex needed */
 }
 
 .searchForm { 
@@ -170,22 +165,7 @@
   gap: 0.75rem; /* Space between email and logout button */
 }
 
-.desktopAuth { /* If you use this class specifically and it's the one rendering */
- display: flex;
- align-items: center;
- gap: 0.75rem; /* Space between email and logout button */
-}
-
-/* REMOVE or COMMENT OUT the individual margin-left rules if using gap on parent */
-/*
-.authSection > a, 
-.authSection > form > button, 
-.desktopAuth > a,
-.desktopAuth > form > button {
-  margin-left: 0.75rem; 
-}
-*/
-
+/* We don't need desktopAuth anymore, just use authSection */
 .userEmail {
   /* No specific margin needed if gap on parent is sufficient */
   white-space: nowrap; 
@@ -194,8 +174,7 @@
 }
 
 
-.authSection > form,
-.desktopAuth > form { /* Ensure form itself doesn't add extra space and aligns items */
+.authSection > form {
   margin: 0;
   padding: 0;
   display: flex; /* This helps if the button inside needs alignment */
@@ -203,8 +182,7 @@
 }
 
 /* Ensure links and button themselves don't have unwanted margins that interfere with gap */
-.navLink, /* For Profile, Settings */
-.navButton { /* For Logout */
+.navLink {
   text-decoration: none;
   color: var(--link-primary);
   font-weight: 500;
@@ -213,44 +191,96 @@
   padding: 0; /* Reset padding, rely on parent for spacing or add minimal if needed for click area */
   transition: color 0.3s ease;
 }
-.navLink:hover,
-.navButton:hover {
+.navLink:hover {
   text-decoration: underline;
   color: var(--link-hover);
 }
 
 
-/* Mobile Nav Styles - Keep whatever you had that was working for mobile */
+/* --- Mobile Navigation Styles --- */
 .mobileNav {
-  /* ... your existing mobile nav styles ... */
-  display: none; /* Assuming hidden on desktop */
-  /* THEME UPDATE: If this has background/text, update it */
-  /* Example: background-color: var(--background-secondary); */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: var(--background-overlay, rgba(0, 0, 0, 0.9)); /* Semi-transparent background */
+  backdrop-filter: blur(5px);
+  height: 100vh;
+  width: 100vw;
+  text-align: center;
+  position: fixed; /* Full screen overlay */
+  top: 0;
+  left: 0;
+  transition: transform 0.3s ease-in-out;
+  z-index: 5; /* Below the header but above content */
 }
-.navLinkMobile {
- /* ... */
-  /* THEME UPDATE: color: var(--text-secondary); */
+
+.mobileNav ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
 }
-.signOutButtonMobile {
- /* ... */
-  /* THEME UPDATE: Similar to .logoutButton or .searchButton */
+
+.mobileNav li {
+  padding: 1rem 0;
 }
+
+.mobileNav a, .navLinkMobile {
+  font-size: 1.5rem;
+  text-transform: uppercase;
+  font-weight: bold;
+  letter-spacing: 0.2rem;
+  color: var(--text-on-dark-bg, #FFFFFF);
+  text-decoration: none;
+  transition: color 0.3s linear;
+}
+
+.mobileNavHeader {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+}
+
+.mobileAuthSection {
+  margin-top: 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
 .userEmailMobile {
- /* ... */
-  /* THEME UPDATE: color: var(--text-secondary); */
+  color: var(--text-on-dark-bg-secondary, #cccccc);
+  font-size: 1rem;
+  margin-bottom: 1rem;
 }
 
+.signOutButtonMobile {
+  background: transparent;
+  border: 1px solid var(--text-on-dark-bg, #FFFFFF);
+  color: var(--text-on-dark-bg, #FFFFFF);
+  padding: 0.75rem 1.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: bold;
+}
 
-/* Media query for mobile - this is where you'd show mobileMenuButton and mobileNav */
-@media (max-width: 768px) { /* Adjust breakpoint as needed */
-  .navLinks, .desktopAuth, .searchContainer /* Hide desktop elements */ {
-    display: none;
+/* Class to hide elements on mobile */
+.desktopOnly {
+  display: flex; /* Or whatever its default is */
+  align-items: center;
+}
+
+/* Media query for mobile */
+@media (max-width: 768px) {
+  .desktopOnly {
+    display: none; /* Hide desktop-only elements */
   }
+  
   .mobileMenuButton {
-    display: block; /* Or flex, inline-block, etc. */
+    display: flex; /* Show the hamburger button */
   }
-  /* If mobileNav is conditionally rendered in JSX, you might not need to set display here */
-  /* .mobileNav { display: flex; flex-direction: column; ... } */
 }
 
 .logoutButton {
