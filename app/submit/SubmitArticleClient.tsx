@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createSupabaseBrowserClient } from '@/lib/supabaseClient';
-import { verifyArticle } from '@/app/actions/articleActions';
+import { verifyArticle } from '@/app/actions/articleActions'; // This is the correct server action
 import styles from './submit.module.css';
 import { TrustScoreMeter } from '@/components/TrustScoreMeter';
 import ReactMarkdown from 'react-markdown';
@@ -254,59 +254,25 @@ const SubmitArticleClient = ({ categories }: SubmitArticleClientProps) => {
     setVerificationResult(null); // Clear previous results
 
     try {
-      const response = await fetch('/api/advanced-verify', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          headline, 
-          content, 
-          sources,
-          draftId: editingArticle?.id // --- NEW: Send draftId ---
-        }),
+      // --- CORRECTED: Call the Server Action directly ---
+      const result = await verifyArticle({ 
+        headline, 
+        content, 
+        sources, 
+        lastUpdated: editingArticle?.last_updated || new Date().toISOString() 
       });
 
-      if (!response.ok) {
-        throw new Error(`API Error: ${response.statusText}`);
-      }
-
-      if (!response.body) {
-        throw new Error("Response stream not available");
-      }
-
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      setVerificationResult({}); // Reset results at the start of a new analysis
-      
-      let fullResponse = '';
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        const chunk = decoder.decode(value, { stream: true });
-        const dataLines = chunk.split('\n\n').filter(line => line.trim().startsWith('data:'));
-        
-        for (const line of dataLines) {
-          fullResponse += line.replace('data: ', '');
-        }
+      if (result.error) {
+        throw new Error(result.message);
       }
       
-      try {
-        const parsed = JSON.parse(fullResponse);
-        if (parsed.error) {
-          throw new Error(parsed.error);
-        }
-        setVerificationResult(parsed);
-        setAnalysisKey(prev => prev + 1);
-      } catch(e) {
-        console.error("Failed to parse full stream response:", fullResponse, e);
-        setError(`An error occurred during analysis: ${ (e as Error).message }`);
-      }
+      // The server action returns a JSON-like object, not a stream
+      setVerificationResult(result);
+      setAnalysisKey(prev => prev + 1);
 
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred during analysis.';
-      setError(errorMessage);
+    } catch (err: any) {
+      console.error("Error during analysis:", err);
+      setError(`An error occurred during analysis: ${err.message}`);
     } finally {
       setIsAnalyzing(false);
     }
