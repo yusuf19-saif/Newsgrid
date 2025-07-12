@@ -10,20 +10,22 @@ export type Source = {
   reason?: string;
 };
 
-export interface Article {
+export type Article = {
   id: string;
+  created_at: string;
   headline: string;
   content: string;
   category: string;
-  slug: string;
-  created_at: string;
-  last_updated?: string; // New: Tracks the last modification time.
-  excerpt?: string | null;
-  sources?: Source[] | null; // New: Replaces the old 'source' string.
-  source?: string | null; // Old field, can be removed later.
-  author_id?: string | null;
-  article_type?: string; // New: Defines the type of article (e.g., "News", "Opinion")
-  status?: 'Published' | 'Pending' | 'Rejected' | 'draft' | 'pending_review';
-  author_full_name?: string | null;
-  analysis_result?: any; // New: Stores the JSON result from the AI analysis.
-}
+  sources: Source[];
+  author_id: string | null;
+  excerpt: string | null;
+  last_updated: string | null;
+  slug: string | null;
+  status: string; // <-- This is now required
+  article_type: string;
+  analysis_result: any | null; // You might want to define a stronger type for this
+  // This allows for the joined author's username
+  profiles?: {
+    username: string;
+  } | null;
+};
