@@ -55,15 +55,17 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
   return (
     <div className={styles.profileContainer}>
       <header className={styles.profileHeader}>
-        <h1 className={styles.username}>{profile.username}</h1>
-        <p className={styles.fullName}>{profile.full_name}</p>
+        {/* FIX: Use full_name, which exists, instead of username */}
+        <h1 className={styles.username}>{profile.full_name || 'User Profile'}</h1>
+        {/* The full_name is already displayed in the h1, so this is redundant */}
+        {/* <p className={styles.fullName}>{profile.full_name}</p> */}
         {isOwnProfile && <p className={styles.email}>{sessionUser?.email}</p>}
-        {/* Add more profile details if available */}
       </header>
 
       <section className={styles.articlesSection}>
         <h2 className={styles.sectionTitle}>
-          {isOwnProfile ? 'Your Articles' : `Articles by ${profile.username}`}
+          {/* FIX: Use full_name here as well */}
+          {isOwnProfile ? 'Your Articles' : `Articles by ${profile.full_name || 'this user'}`}
         </h2>
         <div className={styles.articlesGrid}>
           {articles.length > 0 ? (
