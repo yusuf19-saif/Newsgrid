@@ -3,33 +3,47 @@
 // Keep necessary server-side imports
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { createSupabaseServerClient } from '@/lib/supabaseServer'; // Or your actual server client helper
-import { checkUserRole } from '@/lib/supabaseServer'; // Assuming this is also from your server helper
-import AdminDashboardClient from './AdminDashboardClient'; // Import the new Client Component
+import { createSupabaseServerComponentClient } from '@/lib/supabaseServerComponentClient'; // CORRECTED PATH
+import { checkUserRole } from '@/lib/authUtils'; // CORRECTED PATH
+import AdminDashboardClient from './AdminDashboardClient';
 
-export default async function AdminDashboardPage() {
-  const cookieStore = await cookies();
-  // Ensure createSupabaseServerClient is correctly set up for server components
-  // It might need cookieStore passed, or it might get cookies internally.
-  // Based on your previous setup for lib/supabaseServerComponentClient,
-  // it likely handles cookies internally. Adjust if your lib/supabaseServer is different.
-  const supabase = await createSupabaseServerClient(); 
+const AdminPage = async () => {
+  const supabase = createSupabaseServerComponentClient();
 
-  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  const { data: { user } } = await supabase.auth.getUser();
 
-  if (userError || !user) {
-    console.error("Error fetching user or no user found:", userError);
-    redirect('/login?message=You must be logged in to view this page.');
-    return null; // Ensure redirect is followed
+  if (!user) {
+    redirect('/login');
   }
 
-  const isAdmin = await checkUserRole(user.id, 'admin'); // Ensure this function exists and works
+  const isAdmin = await checkUserRole(user.id, 'admin');
 
   if (!isAdmin) {
-    redirect('/?message=Access Denied. You do not have permission to view this page.'); 
-    return null; // Ensure redirect is followed
+    return (
+      <div style={{ padding: '2rem', textAlign: 'center' }}>
+        <h1>Access Denied</h1>
+        <p>You do not have permission to view this page.</p>
+      </div>
+    );
+  }
+  
+  // Fetch data on the server and pass it to the client component
+  const { data: articles, error: articlesError } = await supabase
+    .from('articles')
+    .select(`
+      *,
+      profiles:author_id (
+        username
+      )
+    `)
+    .order('created_at', { ascending: false });
+
+  if (articlesError) {
+    console.error('Error fetching articles for admin:', articlesError);
+    // You might want to render an error state in the client component
   }
 
-  // If user is authenticated and is an admin, render the client component
-  return <AdminDashboardClient />;
-}
+  return <AdminDashboardClient initialArticles={articles || []} />;
+};
+
+export default AdminPage;

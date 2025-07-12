@@ -24,7 +24,7 @@ export default function AppWrapper({ children, user, isAdmin }: AppWrapperProps)
     if (isSidebarOpen) {
       setSidebarOpen(false);
     }
-  }, [pathname]);
+  }, [pathname, isSidebarOpen]);
 
   const toggleSidebar = () => {
     setSidebarOpen(!isSidebarOpen);

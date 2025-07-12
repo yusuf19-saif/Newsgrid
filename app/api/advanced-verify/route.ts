@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { scrapeUrl } from '../../../lib/scrapflyService';
-import { createSupabaseServerClient } from '@/lib/supabaseServer';
+import { createSupabaseServerComponentClient } from '@/lib/supabaseServerComponentClient'; // CORRECTED PATH
+import { verifyArticleWithAI } from '@/lib/aiUtils';
+import type { Article } from '@/types';
 
 // Initialize the Google Generative AI client with a SERVER-SIDE variable
 const googleApiKey = process.env.GOOGLE_API_KEY;
@@ -221,7 +223,7 @@ export async function POST(request: Request) {
         controller.enqueue(`data: ${JSON.stringify(fullReport)}\n\n`);
 
         if (draftId && !fullReport.error) {
-          const supabase = await createSupabaseServerClient();
+          const supabase = createSupabaseServerComponentClient();
           await supabase.from('articles').update({ analysis_result: fullReport as any }).eq('id', draftId);
         }
         
