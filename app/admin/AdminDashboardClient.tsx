@@ -1,46 +1,53 @@
-"use client"; // This component handles client-side interactions and state
+"use client";
 
 import { useEffect, useState, useCallback } from 'react';
-import styles from './admin.module.css'; // Assuming admin.module.css is in app/admin/
+import styles from './admin.module.css';
 import { Article } from '@/types';
 import { formatDate } from '@/utils/formatDate';
 
-export default function AdminDashboardClient() {
-  const [pendingArticles, setPendingArticles] = useState<Article[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+// Define the type for the props the component will accept
+interface AdminDashboardClientProps {
+  initialArticles: Article[];
+}
+
+// Update the component to accept the props
+export default function AdminDashboardClient({ initialArticles }: AdminDashboardClientProps) {
+  // Use the passed-in articles as the initial state
+  const [articles, setArticles] = useState<Article[]>(initialArticles);
+  const [isLoading, setIsLoading] = useState(false); // No longer loading initially
   const [error, setError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
-  const fetchPendingArticles = useCallback(async () => {
+  // This function can now be used just for refreshing data after an action
+  const fetchArticles = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
-      // Make sure your API route is correctly defined, e.g., /api/admin/pending-articles
-      const response = await fetch('/api/admin/articles?status=Pending'); // Ensure 'Pending' matches the status your API expects
+      // The API route should probably fetch all articles, not just pending,
+      // or be adapted based on what this dashboard should show.
+      // For now, let's assume it fetches all articles for the admin view.
+      const response = await fetch('/api/admin/articles');
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || `Failed to fetch pending articles: ${response.statusText}`);
+        throw new Error(errorData.error || 'Failed to fetch articles');
       }
       const articlesData = await response.json();
-      // If your API returns { articles: [...] }, use articlesData.articles
-      // If it returns directly an array, articlesData is fine.
-      setPendingArticles(articlesData.articles || articlesData); 
+      setArticles(articlesData || []);
     } catch (err: any) {
-      console.error("Error fetching pending articles:", err);
-      setError(err.message || "Could not load pending articles. The API might be down or you might not have permissions if the API checks them.");
+      console.error("Error fetching articles:", err);
+      setError(err.message || "Could not load articles.");
     } finally {
       setIsLoading(false);
     }
   }, []);
 
-  useEffect(() => {
-    fetchPendingArticles();
-  }, [fetchPendingArticles]);
+  // We no longer need a useEffect to fetch on initial load,
+  // since we get the data via props.
 
-  const handleUpdateStatus = async (articleId: string, newStatus: 'Published' | 'Rejected') => {
+  const handleUpdateStatus = async (articleId: string, newStatus: 'Published' | 'Rejected' | 'pending_review') => {
     setActionError(null);
+    setIsLoading(true); // Show loading feedback during the update
     try {
-      // Make sure your API route is correctly defined, e.g., /api/admin/articles/[articleId]/status
       const response = await fetch(`/api/admin/articles/${articleId}/status`, {
         method: 'PUT',
         headers: {
@@ -53,56 +60,56 @@ export default function AdminDashboardClient() {
         const errorData = await response.json();
         throw new Error(errorData.error || `Failed to update status for article ${articleId}`);
       }
-      await fetchPendingArticles(); // Refresh the list
+      // Instead of fetching all articles again, just remove the one we acted on.
+      // This is more optimistic and faster.
+      setArticles(prevArticles => prevArticles.filter(a => a.id !== articleId));
     } catch (err: any) {
       console.error(`Error updating status for article ${articleId}:`, err);
-      setActionError(err.message || `Could not ${newStatus === 'Published' ? 'publish' : 'reject'} article.`);
+      setActionError(err.message || `Could not update article status.`);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  if (isLoading) {
-    return <div className={styles.loading}>Loading pending articles...</div>;
-  }
-
-  if (error) {
-    return <div className={styles.container}><p className={styles.error}>{error}</p></div>;
-  }
-
   return (
     <div className={styles.container}>
-      <h1>Admin Dashboard - Pending Articles</h1>
+      <h1>Admin Dashboard</h1>
       
       {actionError && <p className={styles.error}>{actionError}</p>}
+      
+      {isLoading && <div className={styles.loading}>Updating...</div>}
 
-      {pendingArticles.length === 0 ? (
-        <p>No articles are currently pending review.</p>
+      {articles.length === 0 && !isLoading ? (
+        <p>No articles are available.</p>
       ) : (
-        <div>
-          {pendingArticles.map((article) => (
+        <div className={styles.articlesGrid}>
+          {articles.map((article) => (
             <div key={article.id} className={styles.articleItem}>
               <h3>{article.headline}</h3>
               <div className={styles.articleDetails}>
-                <p><strong>Content Preview:</strong> {article.content?.substring(0, 200)}...</p>
+                <p><strong>Content Preview:</strong> {article.content?.substring(0, 150)}...</p>
                 <p><strong>Category:</strong> {article.category}</p>
-                <p><strong>Source:</strong> {article.source || 'N/A'}</p>
+                {/* It's better to display the author's username */}
+                <p><strong>Author:</strong> {(article as any).profiles?.username || 'N/A'}</p>
                 <p><strong>Submitted:</strong> {formatDate(article.created_at)}</p>
-                <p><strong>Current Status:</strong> {article.status}</p>
-                <p><strong>Author ID:</strong> {article.author_id || 'N/A'}</p>
+                <p><strong>Status:</strong> <span className={`${styles.status} ${styles[article.status.toLowerCase().replace(/ /g, '')]}`}>{article.status}</span></p>
               </div>
-              <div className={styles.actions}>
-                <button 
-                  onClick={() => handleUpdateStatus(article.id, 'Published')}
-                  className={styles.publishButton}
-                >
-                  Publish
-                </button>
-                <button 
-                  onClick={() => handleUpdateStatus(article.id, 'Rejected')}
-                  className={styles.rejectButton} // Add a class for reject button
-                >
-                  Reject
-                </button> 
-              </div>
+              {article.status === 'pending_review' && (
+                <div className={styles.actions}>
+                  <button 
+                    onClick={() => handleUpdateStatus(article.id, 'Published')}
+                    className={`${styles.button} ${styles.publishButton}`}
+                  >
+                    Publish
+                  </button>
+                  <button 
+                    onClick={() => handleUpdateStatus(article.id, 'Rejected')}
+                    className={`${styles.button} ${styles.rejectButton}`}
+                  >
+                    Reject
+                  </button> 
+                </div>
+              )}
             </div>
           ))}
         </div>
