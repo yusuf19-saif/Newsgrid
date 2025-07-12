@@ -3,9 +3,10 @@
 // Keep necessary server-side imports
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { createSupabaseServerComponentClient } from '@/lib/supabaseServerComponentClient'; // CORRECTED PATH
-import { checkUserRole } from '@/lib/authUtils'; // CORRECTED PATH
+import { createSupabaseServerComponentClient } from '@/lib/supabaseServerComponentClient';
+import { checkUserRole } from '@/lib/authUtils';
 import AdminDashboardClient from './AdminDashboardClient';
+import { Article, Source } from '@/types'; // Import Article and Source types
 
 const AdminPage = async () => {
   const supabase = createSupabaseServerComponentClient();
@@ -27,8 +28,7 @@ const AdminPage = async () => {
     );
   }
   
-  // Fetch data on the server and pass it to the client component
-  const { data: articles, error: articlesError } = await supabase
+  const { data: rawArticles, error: articlesError } = await supabase
     .from('articles')
     .select(`
       *,
@@ -40,10 +40,15 @@ const AdminPage = async () => {
 
   if (articlesError) {
     console.error('Error fetching articles for admin:', articlesError);
-    // You might want to render an error state in the client component
   }
 
-  return <AdminDashboardClient initialArticles={articles || []} />;
+  // Normalize the 'sources' field to ensure it's always an array or null
+  const articles: Article[] = (rawArticles || []).map((article: any) => ({
+    ...article,
+    sources: Array.isArray(article.sources) ? article.sources : null,
+  }));
+
+  return <AdminDashboardClient initialArticles={articles} />;
 };
 
 export default AdminPage;

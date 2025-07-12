@@ -87,12 +87,15 @@ export default function AdminDashboardClient({ initialArticles }: AdminDashboard
             <div key={article.id} className={styles.articleItem}>
               <h3>{article.headline}</h3>
               <div className={styles.articleDetails}>
-                <p><strong>Content Preview:</strong> {article.content?.substring(0, 150)}...</p>
+                <p><strong>Content Preview:</strong> {article.content?.substring(0, 200)}...</p>
                 <p><strong>Category:</strong> {article.category}</p>
-                {/* It's better to display the author's username */}
-                <p><strong>Author:</strong> {(article as any).profiles?.username || 'N/A'}</p>
+                <p>
+                  <strong>Sources:</strong> 
+                  {article.sources && article.sources.length > 0 ? `${article.sources.length} source(s)` : 'N/A'}
+                </p>
                 <p><strong>Submitted:</strong> {formatDate(article.created_at)}</p>
                 <p><strong>Status:</strong> <span className={`${styles.status} ${styles[article.status.toLowerCase().replace(/ /g, '')]}`}>{article.status}</span></p>
+                <p><strong>Author:</strong> {(article as any).profiles?.username || 'N/A'}</p>
               </div>
               {article.status === 'pending_review' && (
                 <div className={styles.actions}>
