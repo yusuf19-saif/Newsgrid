@@ -154,8 +154,8 @@ export default function ProfilePage() {
           <div className={styles.articlesGrid}>
             {submittedArticles.map((article) => {
               // Since this is the user's own profile page, they are always the owner.
-              const isOwner = true;
-              return <ArticlePreview key={article.id} article={article} isOwner={isOwner} />;
+              const articleWithOwnerFlag = { ...article, isOwner: true };
+              return <ArticlePreview key={article.id} article={articleWithOwnerFlag} />;
             })}
           </div>
         ) : (

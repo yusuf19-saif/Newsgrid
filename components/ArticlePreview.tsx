@@ -11,7 +11,7 @@ interface ArticlePreviewProps {
 // No longer need the `isOwner` prop separately, it's part of the article object
 export default function ArticlePreview({ article }: ArticlePreviewProps) {
   const authorName = article.author_full_name || 'Anonymous';
-  
+
   return (
     <div className={styles.card}>
       <div className={styles.cardContent}>
@@ -19,7 +19,7 @@ export default function ArticlePreview({ article }: ArticlePreviewProps) {
         <h2 className={styles.title}>
           <Link href={`/article/${article.slug}`}>
             {article.headline}
-          </Link>
+      </Link>
         </h2>
         <p className={styles.excerpt}>{article.excerpt || "No excerpt available."}</p>
         <div className={styles.footer}>
@@ -31,7 +31,7 @@ export default function ArticlePreview({ article }: ArticlePreviewProps) {
           <div className={styles.ownerActions}>
             <Link href={`/submit?draftId=${article.id}`} className={styles.editButton}>
               Edit
-            </Link>
+        </Link>
           </div>
         )}
       </div>
