@@ -10,6 +10,14 @@ export type Source = {
   reason?: string;
 };
 
+// --- NEW: Define and export the UserProfile type ---
+export type UserProfile = {
+  id: string;
+  username: string;
+  full_name: string | null;
+  email?: string; // Email is often handled separately and might be optional here
+};
+
 export type Article = {
   id: string;
   created_at: string;
