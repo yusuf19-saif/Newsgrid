@@ -20,31 +20,43 @@ function formatDate(dateString: string | undefined): string {
   }
 }
 
-async function getArticles(): Promise<Article[]> {
-  const supabase = await createSupabaseServerComponentClient();
+// This function fetches the articles from your database.
+async function getArticles() {
+  const supabase = createSupabaseServerComponentClient();
+
+  // Fetch articles that are 'Published' and join with the author's profile
   const { data, error } = await supabase
-    .from('articles')
+    .from("articles")
     .select(`
       *,
       author:profiles (
         full_name
       )
     `)
-    .eq('status', 'Published')
-    .order('created_at', { ascending: false });
+    .eq("status", "Published")
+    .order("created_at", { ascending: false });
 
   if (error) {
-    console.error('Error fetching articles:', error);
+    console.error("Error fetching articles:", error);
     return [];
   }
 
-  // The query now returns an 'author' object with 'full_name'
-  // We need to map this to the 'author_full_name' property expected by the Article type
-  return data.map(article => ({
+  if (!data) {
+    return [];
+  }
+
+  // --- FIX: Normalize the 'sources' data ---
+  // The 'any' type is used here to handle the inconsistent data from the DB
+  const articles: Article[] = data.map((article: any) => ({
     ...article,
-    author_full_name: article.author?.full_name || 'Anonymous'
+    author_full_name: article.author?.full_name || 'Anonymous',
+    // Ensure sources is always an array or null, never a string
+    sources: Array.isArray(article.sources) ? article.sources : null,
   }));
+
+  return articles;
 }
+
 
 export default async function HomePage() {
   const supabase = await createSupabaseServerComponentClient();
@@ -54,18 +66,17 @@ export default async function HomePage() {
   const articles = await getArticles();
 
   return (
-    <div className={styles.container}>
-      <h1 className={styles.title}>Latest News</h1>
-      {articles && articles.length > 0 ? (
-        <div className={styles.articlesGrid}>
-          {articles.map((article) => {
-            const isOwner = article.author_id === userId;
-            return <ArticlePreview key={article.id} article={article} isOwner={isOwner} />;
-          })}
-        </div>
-      ) : (
-        <p>No articles found. Check back later or try submitting one!</p>
-      )}
+    <div className={styles.homeContainer}>
+      <h1 className={styles.pageTitle}>Latest News</h1>
+      <div className={styles.articlesGrid}>
+        {articles.length > 0 ? (
+          articles.map((article) => (
+            <ArticlePreview key={article.id} article={article} />
+          ))
+        ) : (
+          <p>No articles found.</p>
+        )}
+      </div>
     </div>
   );
 }
