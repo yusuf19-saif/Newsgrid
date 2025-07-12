@@ -16,7 +16,7 @@ export type Article = {
   headline: string;
   content: string;
   category: string;
-  sources: Source[];
+  sources: Source[] | null; // <-- CORRECTED: Can now be an array or null
   author_id: string | null;
   excerpt: string | null;
   last_updated: string | null;
