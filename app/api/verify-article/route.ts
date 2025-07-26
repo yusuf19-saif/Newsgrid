@@ -1,6 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
-import { Anthropic } from 'anthropic';
 
 // This is the prompt you provided.
 const userPrompt = (headline: string, lastUpdated: string, userSourcesText: string) => `
@@ -92,14 +91,26 @@ export async function POST(req: NextRequest) {
     const finalPrompt = userPrompt(article.headline, lastUpdated, userSourcesText);
 
     // 3. Call the Perplexity API
-    const perplexity = new Anthropic({ apiKey: process.env.PERPLEXITY_API_KEY });
-    const response = await perplexity.messages.create({
+    const response = await fetch('https://api.perplexity.ai/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.PERPLEXITY_API_KEY}`
+      },
+      body: JSON.stringify({
         model: "llama-3-sonar-large-32k-online",
         max_tokens: 4096,
         messages: [{ role: "user", content: finalPrompt }]
+      })
     });
 
-    const credibilityReport = response.content[0].text;
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Perplexity API error: ${response.status} ${errorText}`);
+    }
+
+    const responseData = await response.json();
+    const credibilityReport = responseData.choices[0].message.content;
     let newStatus: 'Published' | 'Rejected - AI' = 'Published';
     if (!credibilityReport.includes('/100')) {
         newStatus = 'Rejected - AI';
