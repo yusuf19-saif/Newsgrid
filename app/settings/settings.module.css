@@ -108,3 +108,61 @@
     background-color: rgba(var(--error-rgb, 220, 53, 69), 0.8);
     border-color: rgba(var(--error-rgb, 220, 53, 69), 0.8);
 }
+
+.avatarSection {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.avatarPreview {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  overflow: hidden;
+  background-color: var(--background-secondary-alt);
+  border: 2px solid var(--border-primary);
+}
+
+.avatarImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatarPlaceholder {
+  width: 100%;
+  height: 100%;
+  background-color: var(--background-secondary-alt);
+}
+
+.uploadContainer {
+  display: flex;
+  flex-direction: column;
+}
+
+.uploadButton {
+  display: inline-block;
+  padding: 0.6rem 1rem;
+  background-color: var(--button-secondary-bg);
+  color: var(--button-secondary-text);
+  border: 1px solid var(--button-secondary-bg);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-align: center;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.uploadButton:hover {
+  background-color: var(--button-secondary-hover-bg);
+  border-color: var(--button-secondary-hover-bg);
+}
+
+.uploadHint {
+  font-size: 0.8rem;
+  color: var(--text-tertiary);
+  margin-top: 0.5rem;
+}

@@ -4,25 +4,44 @@
   flex-direction: column;
   height: 100vh;
   overflow: hidden; /* Prevent body from scrolling */
+  transition: padding-left 0.3s ease-in-out;
 }
 
 /* This contains the sidebar and the main content area, side-by-side */
 .mainContentWrapper {
   display: flex;
+  flex: 1; /* This is crucial for filling vertical space */
   flex-direction: row;
-  flex-grow: 1;
   overflow: hidden; /* This container itself should not scroll */
   position: relative; /* For the overlay positioning */
 }
 
 /* This is the main area for page content that WILL scroll */
 .pageContent {
-  flex-grow: 1;
-  overflow-y: auto; /* THIS IS KEY: Make this element scrollable */
-  padding: 2rem;
-  transition: filter 0.3s ease-in-out;
+  flex: 1;
+  overflow-y: auto; /* Allow this main area to scroll */
+  display: flex;
+  flex-direction: column; /* To make footer stick at the bottom */
+  background-color: var(--background-primary);
+  /* The transition on margin-left has been removed to prevent conflicts. */
 }
 
+/* --- NEW: A wrapper for the page's children to make it grow --- */
+.contentArea {
+  flex: 1 0 auto; /* Allow content to grow and shrink but not shrink below its content size */
+  padding: 1.5rem;
+}
+
+/* 
+  The complex margin-left adjustment for the collapsed state has been removed.
+  The layout will now be handled entirely by flexbox, which is more stable.
+*/
+
+.sidebarCollapsed .mainContentWrapper {
+  /* No special rules needed here now */
+}
+
+/* Overlay for mobile sidebar */
 .overlay {
   position: fixed;
   top: 0;

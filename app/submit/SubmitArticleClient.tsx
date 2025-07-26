@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createSupabaseBrowserClient } from '@/lib/supabaseClient';
-import { verifyArticle } from '@/app/actions/articleActions'; // This is the correct server action
+import { verifyArticle } from '@/app/actions/articleActions'; // Use the single, direct action
 import styles from './submit.module.css';
 import { TrustScoreMeter } from '@/components/TrustScoreMeter';
 import ReactMarkdown from 'react-markdown';
@@ -50,7 +50,6 @@ const SubmitArticleClient = ({ categories }: SubmitArticleClientProps) => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisKey, setAnalysisKey] = useState(0);
 
-  // State to hold the status of each source link
   const [linkStatuses, setLinkStatuses] = useState<{ [url: string]: { status: 'valid' | 'invalid' | 'broken' | 'checking', reason?: string } }>({});
 
   useEffect(() => {
@@ -93,23 +92,20 @@ const SubmitArticleClient = ({ categories }: SubmitArticleClientProps) => {
   }, [searchParams, supabase]);
 
   const checkLinkStatus = async (url: string) => {
-    // Prevent re-checking
-    if (linkStatuses[url] && linkStatuses[url].status !== 'checking') return;
+    if (!url || linkStatuses[url]?.status === 'valid') return;
 
     setLinkStatuses(prev => ({ ...prev, [url]: { status: 'checking' } }));
 
     try {
-      const proxyUrl = `/api/check-url?url=${encodeURIComponent(url)}`;
-      const response = await fetch(proxyUrl);
-      
-      if (response.ok) {
-        const data = await response.json();
-        setLinkStatuses(prev => ({ ...prev, [url]: { status: data.status, reason: data.reason } }));
-      } else {
-        setLinkStatuses(prev => ({ ...prev, [url]: { status: 'invalid', reason: 'Checker API failed' } }));
+      const response = await fetch(`/api/check-url?url=${encodeURIComponent(url)}`);
+      if (!response.ok) {
+        throw new Error('API request failed');
       }
+      const data = await response.json();
+      setLinkStatuses(prev => ({ ...prev, [url]: { status: data.status, reason: data.reason } }));
     } catch (error) {
-      setLinkStatuses(prev => ({ ...prev, [url]: { status: 'invalid', reason: 'Failed to connect' } }));
+      console.error(`Error checking URL ${url}:`, error);
+      setLinkStatuses(prev => ({ ...prev, [url]: { status: 'invalid', reason: 'Failed to check URL.' } }));
     }
   };
 
@@ -118,7 +114,6 @@ const SubmitArticleClient = ({ categories }: SubmitArticleClientProps) => {
       const urlToAdd = newUrl;
       setSources([...sources, { type: 'url', value: urlToAdd }]);
       setNewUrl('');
-      // Trigger check for the new URL
       checkLinkStatus(urlToAdd);
     }
   };
@@ -170,13 +165,12 @@ const SubmitArticleClient = ({ categories }: SubmitArticleClientProps) => {
   const getStatusClass = (status: string) => {
     switch (status) {
       case 'valid':
-        return styles.validPill;
+        return styles.statusValid;
       case 'invalid':
-        return styles.invalidPill;
       case 'broken':
-        return styles.brokenPill;
+        return styles.statusInvalid;
       case 'checking':
-        return styles.checkingPill;
+        return styles.statusChecking;
       default:
         return '';
     }
@@ -210,92 +204,131 @@ const SubmitArticleClient = ({ categories }: SubmitArticleClientProps) => {
     ? formatAIResponseWithLinks(aiResponseText, aiSearchResults) 
     : '';
 
-  const parseAIResponse = (text: string) => {
-    const sections: { [key: string]: string } = {};
-    const sectionHeaders = [
-      '⏰ Article Freshness',
-      '🔍 1. Headline Analysis',
-      '🧩 2. Claim Extraction',
-      '🔗 3. Source Verification',
-      '✅ Claim-by-Claim Support',
-      '📊 4. Trust Score Breakdown',
-      '💬 5. Suggestions for Improvement',
-      '🧾 6. Final Summary',
-      '📚 References',
-    ];
+  const parseAiResponse = (text: string) => {
+    if (!text) return null;
+  
+    const parsed: any = {
+      articleFreshness: { lastUpdated: 'N/A', assessment: 'N/A' },
+      headlineCheck: { assessment: 'N/A', explanation: 'N/A' },
+      claimSourceAnalysisTable: '',
+      externalEvidenceAnalysis: '', // New field
+      trustScoreTable: '',
+      suggestions: [],
+      finalSummary: '',
+      references: '',
+      trustScore: null,
+    };
 
-    let remainingText = text;
-    for (let i = 0; i < sectionHeaders.length; i++) {
-      const currentHeader = sectionHeaders[i];
-      const nextHeader = i + 1 < sectionHeaders.length ? sectionHeaders[i+1] : null;
+    const cleanText = (str: string) => str.replace(/\*\*|`|^- /g, '').trim();
+    
+    const sections = text.split(/\n?(?=⏰|🔍|🔗|🌎|📊|💡|🧾|📚)/);
 
-      const regex = nextHeader 
-        ? new RegExp(`${currentHeader}([\\s\\S]*?)(?=${nextHeader})`)
-        : new RegExp(`${currentHeader}([\\s\\S]*)`);
-      
-      const match = remainingText.match(regex);
+    sections.forEach(section => {
+        const trimmedSection = section.trim();
+        if (!trimmedSection) return;
 
-      if (match && match[1]) {
-        sections[currentHeader] = match[1].trim();
-      }
-    }
-    return sections;
+        const header = trimmedSection.split('\n')[0];
+
+        if (header.includes('Article Freshness')) {
+            const lastUpdatedMatch = trimmedSection.match(/Last Updated:\s*([\s\S]*?)(?=\n- Assessment:|$)/i);
+            const assessmentMatch = trimmedSection.match(/Assessment:\s*([\s\S]+)/i);
+            parsed.articleFreshness = {
+                lastUpdated: lastUpdatedMatch && lastUpdatedMatch[1] ? cleanText(lastUpdatedMatch[1]) : 'N/A',
+                assessment: assessmentMatch && assessmentMatch[1] ? cleanText(assessmentMatch[1]) : 'N/A',
+            };
+        } else if (header.includes('Headline Analysis')) {
+            const assessmentMatch = trimmedSection.match(/Assessment:\s*([\s\S]*?)(?=\n- Explanation:|$)/i);
+            const explanationMatch = trimmedSection.match(/Explanation:\s*([\s\S]+)/i);
+            parsed.headlineCheck = {
+                assessment: assessmentMatch && assessmentMatch[1] ? cleanText(assessmentMatch[1]) : 'N/A',
+                explanation: explanationMatch && explanationMatch[1] ? cleanText(explanationMatch[1]) : 'N/A',
+            };
+        } else if (header.includes('Claim & Source Analysis')) {
+            parsed.claimSourceAnalysisTable = trimmedSection.substring(header.length).trim();
+        } else if (header.includes('External Evidence Analysis')) {
+            parsed.externalEvidenceAnalysis = trimmedSection.substring(header.length).trim();
+        } else if (header.includes('Trust Score Breakdown')) {
+            const tableContent = trimmedSection.substring(header.length).trim();
+            parsed.trustScoreTable = tableContent;
+            const totalScoreMatch = tableContent.match(/\*\*Total\*\*.*?(\d+)\/100/);
+            if (totalScoreMatch && totalScoreMatch[1]) {
+                parsed.trustScore = parseInt(totalScoreMatch[1], 10);
+            }
+        } else if (header.includes('Suggestions for Improvement')) {
+            const suggestionsContent = trimmedSection.substring(header.length).trim();
+            parsed.suggestions = suggestionsContent.split('\n').map(line => cleanText(line.replace(/^- Suggestion \d+:|^-\s*/, ''))).filter(Boolean);
+        } else if (header.includes('Final Summary')) {
+            parsed.finalSummary = trimmedSection.substring(header.length).trim();
+        } else if (header.includes('References')) {
+            parsed.references = trimmedSection.substring(header.length).trim();
+        }
+    });
+
+    return parsed;
   };
 
-  const parsedResponse = verificationResult ? parseAIResponse(processedAIResponse) : null;
-
   const handleAnalyze = async () => {
-    if (!headline || !content) {
-      setError('Headline and content are required to run analysis.');
-      return;
-    }
     setIsAnalyzing(true);
+    setVerificationResult(null);
     setError(null);
-    setVerificationResult(null); // Clear previous results
 
     try {
-      // --- CORRECTED: Call the Server Action directly ---
-      const result = await verifyArticle({ 
-        headline, 
-        content, 
-        sources, 
-        lastUpdated: editingArticle?.last_updated || new Date().toISOString() 
+      const result = await verifyArticle({
+        headline,
+        content,
+        sources,
+        lastUpdated: new Date().toISOString(),
       });
 
       if (result.error) {
-        throw new Error(result.message);
+        setError(result.message);
+      } else if (result.text) {
+        const parsedData = parseAiResponse(result.text);
+        
+        if (parsedData && result.searchResults) {
+          const formatWithLinks = (text: string) => formatAIResponseWithLinks(text, result.searchResults);
+          
+          if (parsedData.claimSourceAnalysisTable) {
+            parsedData.claimSourceAnalysisTable = formatWithLinks(parsedData.claimSourceAnalysisTable);
+          }
+          if (parsedData.trustScoreTable) {
+            parsedData.trustScoreTable = formatWithLinks(parsedData.trustScoreTable);
+          }
+          if (parsedData.finalSummary) {
+            parsedData.finalSummary = formatWithLinks(parsedData.finalSummary);
+          }
+          if (parsedData.externalEvidenceAnalysis) {
+            parsedData.externalEvidenceAnalysis = formatWithLinks(parsedData.externalEvidenceAnalysis);
+          }
+        }
+        
+        setVerificationResult(parsedData);
+      } else {
+        setError("Analysis did not return any content.");
       }
-      
-      // The server action returns a JSON-like object, not a stream
-      setVerificationResult(result);
-      setAnalysisKey(prev => prev + 1);
-
-    } catch (err: any) {
-      console.error("Error during analysis:", err);
-      setError(`An error occurred during analysis: ${err.message}`);
+    } catch (e) {
+      console.error(e);
+      setError('An unexpected error occurred during analysis.');
     } finally {
       setIsAnalyzing(false);
     }
   };
 
   const handleSubmit = async (status: 'draft' | 'pending_review') => {
-    try {
-      console.log(`[Submit] Attempting to ${status}...`);
-      setIsSubmitting(true);
-      setError(null);
-      setSuccessMessage(null);
+    setIsSubmitting(true);
+    setError(null);
+    setSuccessMessage(null);
+    console.log(`[Submit] Attempting to ${status}...`);
 
+    try {
       const { data: { session } } = await supabase.auth.getSession();
 
       if (!session) {
-        console.error('[Submit] Error: User is not logged in.');
         throw new Error('You must be logged in to save an article.');
       }
       const user = session.user;
-      console.log(`[Submit] User authenticated: ${user.id}`);
 
       if (status === 'pending_review' && (!category || !content.trim() || !headline.trim())) {
-        console.error('[Submit] Error: Missing required fields for review.');
         throw new Error('Headline, content, and category are required to submit for review.');
       }
 
@@ -306,24 +339,20 @@ const SubmitArticleClient = ({ categories }: SubmitArticleClientProps) => {
       let slugToSave;
 
       if (status === 'pending_review') {
-        console.log('[Submit] Status is "pending_review". Generating slug from headline.');
-        slugToSave = generateSlug(headline);
+        slugToSave = generateSlug(finalHeadline);
         if (!slugToSave) {
-          console.error('[Submit] Error: Headline is empty or invalid for slug generation.');
           throw new Error("Invalid headline. Please provide a more descriptive headline to submit for review.");
         }
       } else { // status === 'draft'
-        console.log('[Submit] Status is "draft". Using existing slug or creating a placeholder.');
-        slugToSave = editingArticle?.slug || generateSlug(headline);
+        slugToSave = editingArticle?.slug || generateSlug(finalHeadline);
         if (!slugToSave) {
           const uniqueSuffix = Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
           slugToSave = `draft-${uniqueSuffix}`;
         }
       }
-      console.log(`[Submit] Slug to be saved: "${slugToSave}"`);
 
       const articleData: Partial<Article> & { author_id: string } = {
-        headline,
+        headline: finalHeadline,
         content,
         category,
         article_type: articleType,
@@ -338,49 +367,36 @@ const SubmitArticleClient = ({ categories }: SubmitArticleClientProps) => {
         articleData.id = editingArticle.id;
       }
       
-      console.log('[Submit] Data prepared for upsert:', articleData);
-      
-      try {
-        const { data, error } = await supabase
-          .from('articles')
-          .upsert(articleData)
-          .select()
-          .single();
+      const { data, error: upsertError } = await supabase
+        .from('articles')
+        .upsert(articleData)
+        .select()
+        .single();
 
-        if (error) {
-          console.error('[Submit] Supabase upsert error:', error);
-          throw error;
-        }
-
-        console.log('[Submit] Upsert successful. Response data:', data);
-
-        if (data) {
-          if (status === 'draft') {
-            if (!editingArticle) {
-              setEditingArticle(data);
-              router.replace(`/submit?draftId=${data.id}`);
-            }
-            setSuccessMessage('Draft saved successfully!');
-          } else {
-            setSuccessMessage('Article submitted successfully for review!');
-            router.push(`/article/${data.slug}`);
-          }
-        }
-      } catch (error: any) {
-        console.error('[Submit] CATCH block after Supabase call:', error);
-        if (error.code === '23505') { 
-            setError('An article with this headline already exists. Please choose a unique headline.');
-        } else {
-            setError(`An error occurred: ${error.message}`);
-        }
-      } finally {
-        setIsSubmitting(false);
+      if (upsertError) {
+        throw upsertError;
       }
-    } catch (e: any) {
-      console.error('[Submit] CATCH block for entire function:', e);
-      setError(`Error: ${e.message}`);
+
+      if (data) {
+        if (status === 'draft') {
+          if (!editingArticle) {
+            setEditingArticle(data);
+            router.replace(`/submit?draftId=${data.id}`);
+          }
+          setSuccessMessage('Draft saved successfully!');
+        } else {
+          setSuccessMessage('Article submitted successfully for review!');
+          router.push(`/article/${data.slug}`);
+        }
+      }
+    } catch (error: any) {
+      console.error('[Submit] An error occurred during submission:', error);
+      if (error.code === '23505') { 
+          setError('An article with this headline already exists. Please choose a unique headline.');
+      } else {
+          setError(`An error occurred: ${error.message}`);
+      }
     } finally {
-      console.log('[Submit] Submission process finished.');
       setIsSubmitting(false);
     }
   };
@@ -457,7 +473,6 @@ const SubmitArticleClient = ({ categories }: SubmitArticleClientProps) => {
                 placeholder="https://example.com/article"
                 onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddUrl(); } }}
               />
-              {/* Restoring the clean onClick handler */}
               <button 
                 type="button" 
                 onClick={handleAddUrl} 
@@ -482,19 +497,14 @@ const SubmitArticleClient = ({ categories }: SubmitArticleClientProps) => {
           <div className={styles.sourcesList}>
             {sources.map((source, index) => (
               <div key={index} className={styles.sourceItem}>
-                <span className={styles.sourceIcon}>🔗</span>
+                <span className={styles.sourceIcon}>
+                  {source.type === 'url' ? '🔗' : '📄'}
+                </span>
                 <span className={styles.sourceValue}>{source.name || source.value}</span>
                 {source.type === 'url' && linkStatuses[source.value] && (
-                  <div className={styles.sourceItemPills}>
-                    <span className={`${styles.statusPill} ${getStatusClass(linkStatuses[source.value].status)}`}>
-                      {linkStatuses[source.value].status}
-                    </span>
-                    {(linkStatuses[source.value].status === 'invalid' || linkStatuses[source.value].status === 'broken') && linkStatuses[source.value].reason && (
-                      <span className={styles.reasonPill}>
-                        {linkStatuses[source.value].reason}
-                      </span>
-                    )}
-                  </div>
+                  <span className={`${styles.statusPill} ${getStatusClass(linkStatuses[source.value].status)}`}>
+                    {linkStatuses[source.value].status}
+                  </span>
                 )}
                 <button type="button" onClick={() => handleRemoveSource(index)} className={styles.removeButton}>×</button>
               </div>
@@ -514,99 +524,89 @@ const SubmitArticleClient = ({ categories }: SubmitArticleClientProps) => {
             </div>
           )}
 
-          {verificationResult && Object.keys(verificationResult).length > 0 && !verificationResult.error && (
-            <div key={analysisKey} className={styles.aiResultContainer}>
-              <h3>AI Credibility Report</h3>
-
-              {verificationResult.trustScore && (
-                <div className={styles.finalVerdictSection}>
-                    <h4>Overall Credibility Score</h4>
-                    <TrustScoreMeter score={verificationResult.trustScore.total} />
-                </div>
-              )}
-
-              {verificationResult.finalSummary && (
-                <div className={styles.analysisSection}>
-                  <h5>Final Summary</h5>
-                  <p>{verificationResult.finalSummary}</p>
-                </div>
-              )}
+          {verificationResult && !isAnalyzing && (
+            <div key={analysisKey} className={styles.aiReport}>
+              <h2 className={styles.reportTitle}>AI Credibility Report</h2>
               
-              <hr className={styles.divider} />
+              {verificationResult.trustScore !== null && (
+                <div className={styles.trustScoreSection}>
+                    <TrustScoreMeter score={verificationResult.trustScore} />
+                </div>
+              )}
 
-              {verificationResult.trustScore && (
-                 <div className={styles.analysisSection}>
-                    <h5>Trust Score Breakdown</h5>
-                    <div className={styles.scoreBreakdown}>
-                        <ul>
-                            {Object.entries(verificationResult.trustScore).map(([key, value]) => (
-                                key !== 'total' && scoreCategories[key] && <li key={key}><strong>{key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}:</strong> {value as number}/{scoreCategories[key]}</li>
-                            ))}
-                        </ul>
-                    </div>
+              {verificationResult.articleFreshness && (
+                <div className={styles.reportSection}>
+                  <h3>⏰ Article Freshness</h3>
+                  <p><strong>Last Updated:</strong> {verificationResult.articleFreshness.lastUpdated}</p>
+                  <p><strong>Assessment:</strong> {verificationResult.articleFreshness.assessment}</p>
                 </div>
               )}
 
               {verificationResult.headlineCheck && (
-                <div className={styles.analysisSection}>
-                  <h5><span className={styles.emoji}>🔎</span> 1. Headline Check</h5>
+                <div className={styles.reportSection}>
+                  <h3>🔍 1. Headline Analysis</h3>
                   <p><strong>Assessment:</strong> {verificationResult.headlineCheck.assessment}</p>
                   <p><strong>Explanation:</strong> {verificationResult.headlineCheck.explanation}</p>
                 </div>
               )}
-              
-              {verificationResult.claimAnalysisTable && (
-                <div className={styles.analysisSection}>
-                  <h5><span className={styles.emoji}>⚖️</span> 2. Claim-by-Claim Analysis</h5>
-                  <table className={styles.claimsTable}>
-                    <thead>
-                      <tr>
-                        <th>Claim</th>
-                        <th>Type</th>
-                        <th>Supported?</th>
-                        <th>Source(s)</th>
-                        <th>Notes</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {verificationResult.claimAnalysisTable.map((claim: any, index: number) => (
-                        <tr key={`claim-${index}`}>
-                          <td>{claim.claim}</td>
-                          <td>{claim.claim_type}</td>
-                          <td>{claim.is_supported ? '✔️' : '❌'}</td>
-                          <td>{claim.sources}</td>
-                          <td>{claim.notes}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+
+              {verificationResult.claimSourceAnalysisTable && (
+                <div className={styles.reportSection}>
+                  <h3>🔗 2. Claim & Source Analysis (User-Provided Sources)</h3>
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    {verificationResult.claimSourceAnalysisTable}
+                  </ReactMarkdown>
                 </div>
               )}
 
-              {verificationResult.suggestions && (
-                <div className={styles.analysisSection}>
-                  <h5><span className={styles.emoji}>💡</span> 3. Suggestions for Improvement</h5>
-                  <ul className={styles.suggestionsList}>
-                      {verificationResult.suggestions.map((suggestion: string, index: number) => (
-                          <li key={`suggestion-${index}`}>{suggestion}</li>
-                      ))}
+              {verificationResult.externalEvidenceAnalysis && (
+                <div className={styles.reportSection}>
+                  <h3>🌎 3. External Evidence Analysis</h3>
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    {verificationResult.externalEvidenceAnalysis}
+                  </ReactMarkdown>
+                </div>
+              )}
+
+              {verificationResult.trustScoreTable && (
+                <div className={styles.reportSection}>
+                  <h3>📊 4. Trust Score Breakdown</h3>
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    {verificationResult.trustScoreTable}
+                  </ReactMarkdown>
+                </div>
+              )}
+              
+              {verificationResult.suggestions && verificationResult.suggestions.length > 0 && (
+                <div className={styles.reportSection}>
+                  <h3>💡 5. Suggestions for Improvement</h3>
+                  <ul>
+                    {verificationResult.suggestions.map((suggestion: string, index: number) => (
+                      <li key={index}>{suggestion}</li>
+                    ))}
                   </ul>
                 </div>
               )}
 
-              {verificationResult.references?.length > 0 && (
-                <div className={styles.analysisSection}>
-                    <h5><span className={styles.emoji}>📚</span> References</h5>
-                    <ul className={styles.sourceList}>
-                        {verificationResult.references.map((ref: any, index: number) => (
-                            <li key={`ref-${index}`}>[{ref.id}] <a href={ref.url} target="_blank" rel="noopener noreferrer">{ref.url}</a></li>
-                        ))}
-                    </ul>
+              {verificationResult.finalSummary && (
+                <div className={styles.reportSection}>
+                  <h3>🧾 6. Final Summary</h3>
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    {verificationResult.finalSummary}
+                  </ReactMarkdown>
+                </div>
+              )}
+
+              {verificationResult.references && (
+                <div className={styles.reportSection}>
+                  <h3>📚 7. References</h3>
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    {verificationResult.references}
+                  </ReactMarkdown>
                 </div>
               )}
             </div>
           )}
-
         </div>
 
         <div className={styles.formActions}>
@@ -620,6 +620,7 @@ const SubmitArticleClient = ({ categories }: SubmitArticleClientProps) => {
           </button>
           <button
             type="submit"
+            onClick={() => handleSubmit('pending_review')}
             disabled={isSubmitting || !headline || !content || !category}
             className={`${styles.button} ${styles.submitButton}`}
           >

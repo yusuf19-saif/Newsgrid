@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { ThemeProvider } from "@/contexts/ThemeContext";
+// ThemeProvider is now in AppWrapper
 import { createSupabaseServerComponentClient } from '../lib/supabaseServerComponentClient';
 import { checkUserRole } from '@/lib/authUtils';
 import AppWrapper from "./AppWrapper";
@@ -26,12 +26,10 @@ export default async function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <ThemeProvider>
-          {/* AppWrapper is a client component that handles state */}
+          {/* AppWrapper now handles its own providers */}
           <AppWrapper user={user} isAdmin={isAdmin}>
             {children}
           </AppWrapper>
-        </ThemeProvider>
       </body>
     </html>
   );

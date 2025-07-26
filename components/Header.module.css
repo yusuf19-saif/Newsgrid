@@ -3,14 +3,30 @@
   display: flex;
   justify-content: space-between; /* This is key */
   align-items: center; 
-  padding: 0 1.5rem; /* Vertical padding removed, relying on fixed height */
+  padding: 1rem 1.5rem; /* Adjusted vertical padding for a better fit */
   background-color: var(--background-secondary);
   border-bottom: 1px solid var(--border-primary);
-  height: 65px; 
+  /* height property removed */
   width: 100%;
   box-sizing: border-box; 
   position: relative; /* Needed for z-index and positioning of mobile nav */
   z-index: 1000;
+}
+
+.sidebarToggleButton {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 1.5rem;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s ease;
+}
+.sidebarToggleButton:hover {
+  color: var(--text-primary);
 }
 
 .headerLeft, .headerRight {

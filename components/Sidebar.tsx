@@ -4,81 +4,76 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import styles from './Sidebar.module.css';
 import { type User } from '@supabase/supabase-js';
-import { ThemeToggleButton } from './ThemeToggleButton';
 import { handleSignOut } from '@/app/actions/authActions';
+import { 
+  FiUser, 
+  FiFileText, 
+  FiSettings, 
+  FiPlusSquare, 
+  FiShield, 
+  FiLogOut,
+  FiLogIn,
+  FiUserPlus
+} from 'react-icons/fi';
 
 type SidebarProps = {
   user: User | null;
   isAdmin: boolean;
   isOpen: boolean;
+  isCollapsed: boolean;
   onClose: () => void;
 };
 
-export function Sidebar({ user, isAdmin, isOpen, onClose }: SidebarProps) {
+export function Sidebar({ user, isAdmin, isOpen, isCollapsed, onClose }: SidebarProps) {
   const pathname = usePathname();
   const isActive = (path: string) => pathname === path || (path !== '/' && pathname.startsWith(path));
 
-  const mainNavItems = [
-    { href: "/", label: "Home" },
-    { href: "/categories", label: "Categories" },
-    { href: "/about", label: "About" },
-    { href: "/guidelines", label: "Guidelines" },
-    { href: "/trustscore", label: "Trustscore" },
+  const userNavItems = [
+    { href: user ? `/profile/${user.id}` : '/profile', label: 'Profile', icon: <FiUser /> },
+    { href: '/drafts', label: 'Drafts', icon: <FiFileText /> },
+    { href: '/settings', label: 'Settings', icon: <FiSettings /> },
+    { href: '/submit', label: 'Submit Article', icon: <FiPlusSquare /> }
+  ];
+
+  const adminNavItems = [
+    { href: '/admin', label: 'Admin', icon: <FiShield /> }
+  ];
+
+  const authNavItems = [
+    { href: '/login', label: 'Log In', icon: <FiLogIn /> },
+    { href: '/signup', label: 'Sign Up', icon: <FiUserPlus /> }
   ];
 
   return (
-    <aside className={`${styles.sidebar} ${isOpen ? styles.open : ''}`}>
-      <div className={styles.sidebarHeader}>
-        <span>Navigation</span>
-        <ThemeToggleButton />
-      </div>
+    <aside className={`${styles.sidebar} ${isOpen ? styles.open : ''} ${isCollapsed ? styles.collapsed : ''}`}>
       <nav className={styles.nav}>
-        {/* General Navigation */}
-        <ul className={styles.navList}>
-           <li className={styles.navSectionTitle}>Menu</li>
-          {mainNavItems.map(item => (
-            <li key={item.href}>
-              <Link href={item.href} className={`${styles.navLink} ${isActive(item.href) ? styles.active : ''}`} onClick={onClose}>
-                {item.label}
-              </Link>
-            </li>
-          ))}
-        </ul>
-
         {/* User-Specific Navigation */}
         {user && (
           <ul className={styles.navList}>
             <li className={styles.navSectionTitle}>My Account</li>
-            <li>
-              <Link href={`/profile/${user.id}`} className={`${styles.navLink} ${isActive(`/profile/${user.id}`) ? styles.active : ''}`} onClick={onClose}>
-                Profile
-              </Link>
-            </li>
-             <li>
-                <Link href="/drafts" className={`${styles.navLink} ${isActive('/drafts') ? styles.active : ''}`} onClick={onClose}>
-                    Drafts
-                </Link>
-            </li>
-            <li>
-              <Link href="/settings" className={`${styles.navLink} ${isActive('/settings') ? styles.active : ''}`} onClick={onClose}>
-                Settings
-              </Link>
-            </li>
-            <li>
-                <Link href="/submit" className={`${styles.navLink} ${isActive('/submit') ? styles.active : ''}`} onClick={onClose}>
-                Submit Article
-                </Link>
-            </li>
-            {isAdmin && (
-              <li>
-                <Link href="/admin" className={`${styles.navLink} ${isActive('/admin') ? styles.active : ''}`} onClick={onClose}>
-                  Admin
+            {userNavItems.map(item => (
+              <li key={item.href}>
+                <Link href={item.href} className={`${styles.navLink} ${isActive(item.href) ? styles.active : ''}`} onClick={onClose}>
+                  <span className={styles.navIcon}>{item.icon}</span>
+                  <span className={styles.navLabel}>{item.label}</span>
                 </Link>
               </li>
-            )}
+            ))}
+
+            {isAdmin && adminNavItems.map(item => (
+              <li key={item.href}>
+                <Link href={item.href} className={`${styles.navLink} ${isActive(item.href) ? styles.active : ''}`} onClick={onClose}>
+                  <span className={styles.navIcon}>{item.icon}</span>
+                  <span className={styles.navLabel}>{item.label}</span>
+                </Link>
+              </li>
+            ))}
             <li>
                 <form action={handleSignOut} className={styles.signOutForm}>
-                    <button type="submit" className={styles.signOutButton}>Sign Out</button>
+                    <button type="submit" className={styles.signOutButton}>
+                      <span className={styles.navIcon}><FiLogOut /></span>
+                      <span className={styles.navLabel}>Sign Out</span>
+                    </button>
                 </form>
             </li>
           </ul>
@@ -88,8 +83,14 @@ export function Sidebar({ user, isAdmin, isOpen, onClose }: SidebarProps) {
         {!user && (
              <ul className={styles.navList}>
                 <li className={styles.navSectionTitle}>Account</li>
-                <li><Link href="/login" className={styles.navLink} onClick={onClose}>Log In</Link></li>
-                <li><Link href="/signup" className={styles.navLink} onClick={onClose}>Sign Up</Link></li>
+                {authNavItems.map(item => (
+                  <li key={item.href}>
+                    <Link href={item.href} className={`${styles.navLink} ${isActive(item.href) ? styles.active : ''}`} onClick={onClose}>
+                      <span className={styles.navIcon}>{item.icon}</span>
+                      <span className={styles.navLabel}>{item.label}</span>
+                    </Link>
+                  </li>
+                ))}
             </ul>
         )}
       </nav>

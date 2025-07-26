@@ -1,9 +1,7 @@
 'use server';
 
-import { GoogleGenerativeAI } from '@google/generative-ai';
 import { type Source } from '@/types';
 
-// This interface defines the expected structure of the input to our action.
 interface VerifyArticleInput {
   headline: string;
   content: string;
@@ -11,150 +9,106 @@ interface VerifyArticleInput {
   lastUpdated: string;
 }
 
-// Get the API key from a SERVER-SIDE environment variable.
-const googleApiKey = process.env.GOOGLE_API_KEY;
-
-// Throw an error if the API key is not found.
-if (!googleApiKey) {
-  throw new Error('GOOGLE_API_KEY is not set in server environment variables.');
-}
-
-// Initialize the Google Generative AI client.
-const genAI = new GoogleGenerativeAI(googleApiKey);
-
-export async function verifyArticle(
-  { headline, content, sources }: VerifyArticleInput
-) {
-  try {
-    // Select the Gemini model.
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
-    // Construct a new, detailed prompt optimized for Gemini.
-    const prompt = `
-You are an AI fact-checking assistant designed to analyze a user-submitted news article and assess its credibility. Always return your response using the exact structure and headings outlined below. Do not deviate from this structure. Do not reorder, remove, or rename sections.
-
-Use consistent tone, bullet formatting, and scoring logic in every response. Ensure dates, file types, and references are clearly labeled.
-
---- BEGIN STRUCTURE ---
-
-⏰ Article Freshness
-_This article is over X days old. Information may be outdated. Consider revising._
-
----
-
-🔍 1. Headline Analysis
-**Headline:** "..."
-**Assessment:** (Accurate / Somewhat Misleading / Misleading)
-**Explanation:** One or two concise sentences assessing how well the headline reflects the article content and tone. Flag emotionally charged or vague language.
-
----
-
-🧩 2. Claim Extraction
-Extract 3–6 key claims from the article. Use this exact table format:
-
-| # | Claim | Type |
-|---|-------|------|
-| 1 | "..." | (Factual / Statistical / Expert Opinion / Causal / Official Action) |
-| 2 | "..." | ... |
-| 3 | "..." | ... |
-
----
-
-🔗 3. Source Verification
-
-List and verify each user-provided source (URLs or PDFs) individually using this format:
-
-#### Source 1
-**URL or File:** ...
-**Status:** (Reachable / Broken / Inaccessible)
-**Relevance:** (Clearly supports claims / Weakly relevant / Irrelevant)
-**Supports:** (Claim #1, Claim #3) or "None"
-
-Repeat for all sources. Flag PDFs as **Private – Not publicly verifiable** if they can't be independently accessed.
-
----
-
-✅ Claim-by-Claim Support
-Cross-check each claim with sources. Use this table format:
-
-| Claim # | Supported? | Source(s) | Notes |
-|---------|------------|-----------|-------|
-| 1 | Yes / Partially / No | [1][3] | Concise explanation |
-| 2 | ... | ... | ... |
-
----
-
-📊 4. Trust Score Breakdown
-
-Use this exact scoring breakdown:
-
-| Category | Score | Rationale |
-|----------|-------|-----------|
-| Headline Accuracy | /20 | ... |
-| Source Quality | /20 | ... |
-| Claim Support | /30 | ... |
-| Tone & Bias | /10 | ... |
-| Structure & Clarity | /10 | ... |
-| Bonus | /10 | (Primary sources, transparency, etc.) |
-
-**Total Trust Score: X/100**
-
----
-
-💬 5. Suggestions for Improvement
-• Provide direct data for unsupported claims
-• Replace inaccessible or irrelevant sources
-• Add specific attribution quotes, temperature ranges, etc.
-(List 3–6 concrete ways to improve)
-
----
-
-🧾 6. Final Summary
-1–2 sentence summary of credibility and trust level.
-
-**Trust Score:** X/100
-
----
-
-📚 References
-List all public sources in reference format, including full URLs.
-
----
-
-DO NOT add extra commentary. DO NOT invent sources. DO NOT deviate from this structure under any circumstances. Maintain identical formatting and tone across all uses.
-
---- END STRUCTURE ---
-
----
-**Article to Analyze:**
-**Headline:** "${headline}"
-**Content:** "${content}"
----
-**Provided Sources for Verification:**
-      ${sources.map((s, i) => `
-        **Source ${i + 1}:**
-        - URL: ${s.value}
-        - Initial Status: ${s.status || 'Not Checked'}
-        - Initial Reason: ${s.reason || 'N/A'}
-      `).join('')}
-    `;
-
-    // Generate the content using the Gemini model.
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
-
-    // Return the response in the expected format.
-    return {
-      text: text,
-      searchResults: [] // The Gemini SDK doesn't have built-in search tools like the other one.
-    };
-  } catch (error) {
-    console.error('Error calling Google Gemini API:', error);
-    // Return a structured error that the client can display.
+export async function verifyArticle({ headline, content, sources, lastUpdated }: VerifyArticleInput) {
+  const perplexityApiKey = process.env.PERPLEXITY_API_KEY;
+  if (!perplexityApiKey) {
+    console.error('PERPLEXITY_API_KEY is not set in environment variables.');
     return {
       error: true,
-      message: 'Failed to get a response from the AI. Please try again later.'
+      message: 'The Perplexity API key is not configured on the server.'
+    };
+  }
+
+  try {
+    const userSourcesText = sources.map((s, i) => `- User Source ${i + 1}: ${s.value}`).join('\n');
+
+    const prompt = `
+      You are a specialized AI assistant that completes a credibility report.
+      Your entire response MUST be the markdown content for the report. Nothing else.
+      - Do NOT write any introduction, conclusion, or conversational text.
+      - Do NOT include your reasoning or thought process.
+      - Fill out every section of the report template below.
+
+      --- CREDIBILITY REPORT (Fill this out) ---
+      ⏰ **Article Freshness**
+      - Last Updated: ${lastUpdated}
+      - Assessment: [Analyze the provided "Last Updated" date. State whether the article is recent, dated, or out-of-date for its topic. For example: "This article, updated today, is highly current." or "This information from 2019 is likely outdated."]
+
+      🔍 **1. Headline Analysis**
+      - Headline: "${headline}"
+      - Assessment: [Provide a one-sentence assessment of the headline. Is it neutral, sensationalized, biased, or clickbait?]
+      - Explanation: [Provide a brief explanation for your assessment of the headline.]
+
+      🔗 **2. Claim & Source Analysis (User-Provided Sources)**
+      - User Sources: ${userSourcesText || 'None'}
+      - Instructions: Analyze the user-provided sources ONLY. Do not use external evidence here.
+      | Claim # | Supported by User Sources? | Notes (with citations to user sources) |
+      |---|---|---|
+      | 1 | | |
+      | 2 | | |
+      | 3 | | |
+      | 4 | | |
+
+      🌎 **3. External Evidence Analysis**
+      - Instructions: List the external URLs you found during your web search to verify the article's claims. For each source, provide a brief (1-2 sentence) explanation of why it is relevant.
+      - Example Source:
+        - **URL:** https://www.noaa.gov/news-release/noaa-predicts-above-normal-2024-atlantic-hurricane-season
+        - **Relevance:** This official forecast from the National Oceanic and Atmospheric Administration provides context for hurricane season predictions, which is relevant to the article's subject.
+      - [List your found sources and their relevance here.]
+
+      📊 **4. Trust Score Breakdown**
+      | Category | Score | Rationale |
+      |---|---|---|
+      | Headline Accuracy | /20 | |
+      | Source Quality (User & External) | /20 | |
+      | Claim Support (User & External) | /30 | |
+      | Tone & Bias | /10 | |
+      | Structure & Clarity | /10 | |
+      | Bonus | /10 | |
+      | **Total** | **/100** | |
+
+      💡 **5. Suggestions for Improvement**
+      - Suggestion 1:
+      - Suggestion 2:
+      - Suggestion 3:
+
+      🧾 **6. Final Summary**
+      [Your summary here, with citations]
+
+      📚 **7. References**
+      [List all sources here as a numbered list. First, list every user-provided source and add "[User provided]" after each. Then, list any new, relevant sources you found during your web search. If a user-provided source is irrelevant, you must still list it, but add the note "(Note: This source was found to be irrelevant to the article's core claims)" next to it.]
+    `;
+
+    const response = await fetch('https://api.perplexity.ai/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${perplexityApiKey}`,
+      },
+      body: JSON.stringify({
+        model: 'sonar-reasoning-pro',
+        messages: [{ role: 'user', content: prompt }],
+        return_sources: true,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorBody = await response.text();
+      console.error(`Perplexity API error: ${response.status} ${response.statusText}`, errorBody);
+      throw new Error(`Perplexity API request failed`);
+    }
+
+    const data = await response.json();
+    const text = data.choices[0].message.content;
+    const searchResults = data.choices[0].sources;
+
+    return { text, searchResults };
+
+  } catch (error) {
+    console.error('Error in verifyArticle:', error);
+    return {
+      error: true,
+      message: 'Failed to get a response from the AI. This may be due to a temporary issue or high demand. Please try again in a moment.'
     };
   }
 }

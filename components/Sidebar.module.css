@@ -4,8 +4,30 @@
   width: 250px; /* Fixed width for the sidebar */
   flex-shrink: 0; /* Prevent sidebar from shrinking */
   padding: 1.5rem;
-  transition: transform 0.3s ease-in-out;
+  transition: transform 0.3s ease-in-out, width 0.3s ease-in-out;
   z-index: 1020;
+}
+
+.sidebar.collapsed {
+  width: 80px;
+}
+.sidebar.collapsed .navSectionTitle {
+  opacity: 0;
+  height: 0;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+  transition: opacity 0.2s ease, height 0.3s ease, margin 0.3s, padding 0.3s;
+}
+.sidebar.collapsed .navLink,
+.sidebar.collapsed .signOutButton {
+  justify-content: center;
+}
+.sidebar.collapsed .navLabel { /* Hide text label */
+  opacity: 0;
+  width: 0;
+  overflow: hidden;
+  white-space: nowrap;
 }
 
 .sidebarHeader {
@@ -63,6 +85,21 @@
   font-weight: bold;
 }
 
+.navLink span:last-child, .signOutButton span:last-child {
+  transition: opacity 0.2s ease, width 0.3s ease;
+}
+
+.navLabel {
+  transition: opacity 0.2s ease, width 0.2s ease;
+  white-space: nowrap; /* Prevent wrapping during transition */
+}
+
+.navIcon {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 0.75rem; /* Space between icon and text */
+}
+
 .signOutForm {
     margin: 0;
     padding: 0;
@@ -102,7 +139,11 @@
     border-right: 1px solid var(--border-primary); /* Keep border */
   }
 
-  .sidebar.open {
+  /*
+    FIX: Changed selector from `.sidebar.open` to just `.open`
+    This correctly targets the class name added by the component when `isOpen` is true.
+  */
+  .open {
     transform: translateX(0); /* Slide it in when open */
   }
 }

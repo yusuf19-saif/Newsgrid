@@ -10,12 +10,14 @@ import { handleSignOut } from '@/app/actions/authActions';
 import { ThemeToggleButton } from './ThemeToggleButton';
 import { createSupabaseBrowserClient } from '@/lib/supabaseClient';
 import type { User } from '@supabase/supabase-js';
+import { FiMenu } from 'react-icons/fi';
 
 interface HeaderProps {
   onToggleSidebar: () => void;
+  onToggleCollapse: () => void; // For desktop collapse
 }
 
-export default function Header({ onToggleSidebar }: HeaderProps) {
+export default function Header({ onToggleSidebar, onToggleCollapse }: HeaderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoadingUser, setIsLoadingUser] = useState(true);
 
@@ -53,6 +55,8 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
     { href: "/", label: "Home" },
     { href: "/categories", label: "Categories" },
     { href: "/about", label: "About" },
+    { href: "/guidelines", label: "Guidelines" },
+    { href: "/trustscore", label: "Trustscore" },
   ];
 
   if (isLoadingUser) {
@@ -71,6 +75,13 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
   return (
     <header className={styles.header}>
       <div className={styles.headerLeft}>
+        <button
+          className={`${styles.sidebarToggleButton} ${styles.desktopOnly}`}
+          onClick={onToggleCollapse}
+          aria-label="Toggle sidebar collapse"
+        >
+          <FiMenu />
+        </button>
         <div className={styles.logoContainer}>
           <Link href="/">NewsGrid</Link>
         </div>

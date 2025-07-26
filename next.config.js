@@ -3,18 +3,16 @@ const CopyWebpackPlugin = require('copy-webpack-plugin');
 const path = require('path');
 
 const nextConfig = {
-  /* config options here */
-  reactStrictMode: true,
-  images: {
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: '[YOUR_SUPABASE_PROJECT_ID].supabase.co',
-        port: '',
-        pathname: '/storage/v1/object/public/**',
-      },
-    ],
-  },
+    images: {
+        remotePatterns: [
+            {
+                protocol: 'https',
+                // This will be in the format of 'your-project-id.supabase.co'
+                // We extract the hostname from the full URL environment variable.
+                hostname: new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).hostname,
+            },
+        ],
+    },
 };
 
 module.exports = nextConfig;

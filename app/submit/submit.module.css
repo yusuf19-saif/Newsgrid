@@ -834,11 +834,159 @@
 }
 
 .aiResultContainer {
-  margin-top: 1.5rem;
-  padding: 1.5rem;
-  border: 1px solid var(--border-primary);
+  margin-top: 2rem;
+  padding: 2rem;
+  border: 1px solid var(--border-secondary);
+  border-radius: var(--border-radius-large);
+  background-color: var(--background-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.aiResultContainer h3 {
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 1rem 0;
+}
+
+.finalVerdictSection {
+  text-align: center;
+  margin-bottom: 2rem;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid var(--border-secondary);
+}
+
+.finalVerdictSection h4 {
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.analysisSection {
+  margin-bottom: 2.5rem;
+}
+
+.analysisSection:last-child {
+  margin-bottom: 0;
+}
+
+.analysisSection h5 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.analysisSection .emoji {
+  font-size: 1.5rem;
+}
+
+.analysisSection p {
+  color: var(--text-secondary);
+  line-height: 1.7;
+}
+
+.analysisSection p strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.tableContainer {
+  width: 100%;
+  overflow-x: auto;
+  margin-top: 1rem;
   border-radius: var(--border-radius);
+  border: 1px solid var(--border-secondary);
+}
+
+.claimsTable {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+  font-size: 0.95rem;
+  table-layout: fixed;
+  overflow-x: auto;
+}
+
+.claimsTable th,
+.claimsTable td {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--border-secondary);
+  color: var(--text-secondary);
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.claimsTable th {
+  font-weight: 600;
+  color: var(--text-primary);
   background-color: var(--background-secondary);
+}
+
+.claimsTable tr:last-child td {
+  border-bottom: none;
+}
+
+.claimsTable td:first-child {
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  width: 15%;
+}
+
+.claimsTable td:nth-child(2) {
+  width: 35%;
+}
+
+.claimsTable td:nth-child(3),
+.claimsTable td:nth-child(4),
+.claimsTable td:nth-child(5) {
+  width: 15%;
+}
+
+.scoreBreakdown ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.scoreBreakdown li {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+  color: var(--text-secondary);
+}
+
+.scoreBreakdown li strong {
+  color: var(--text-primary);
+}
+
+.suggestionsList, .sourceList {
+  padding-left: 1.5rem;
+  color: var(--text-secondary);
+  line-height: 1.8;
+}
+
+.suggestionsList li::marker, .sourceList li::marker {
+  color: var(--text-primary);
+}
+
+.sourceList a {
+  color: var(--link-primary);
+  text-decoration: none;
+  word-break: break-all;
+}
+
+.sourceList a:hover {
+  text-decoration: underline;
 }
 
 .trustScoreDisplay {
@@ -1028,27 +1176,41 @@
 }
 
 .statusPill {
-  padding: 4px 10px;
-  border-radius: 9999px;
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
   font-size: 0.75rem;
-  font-weight: 600;
+  font-weight: 500;
+  margin-left: 12px;
   text-transform: capitalize;
-  cursor: help; /* Show a help cursor on hover */
 }
 
-.validPill {
-  background-color: var(--success-background);
-  color: var(--success-text);
+.statusValid {
+  background-color: #1a3c2a;
+  color: #6ee7b7;
+  border: 1px solid #2f6c4d;
 }
 
-.invalidPill, .brokenPill {
-  background-color: var(--error-background);
-  color: var(--error-text);
+.statusInvalid {
+  background-color: #451a24;
+  color: #fca5a5;
+  border: 1px solid #8c2d3f;
 }
 
-.checkingPill {
-  background-color: #fef9c3; /* A nice yellow for checking */
-  color: #92400e;
+.statusChecking {
+  background-color: #423519;
+  color: #fcd34d;
+  border: 1px solid #8c6d2d;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
 }
 
 .sourceStatus.broken {
