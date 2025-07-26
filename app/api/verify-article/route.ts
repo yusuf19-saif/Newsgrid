@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
-import { Anthropic } from 'npm:anthropic';
+import { Anthropic } from 'anthropic';
 
 // This is the prompt you provided.
 const userPrompt = (headline: string, lastUpdated: string, userSourcesText: string) => `
