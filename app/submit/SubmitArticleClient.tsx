@@ -10,413 +10,362 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { type Source, Article } from '@/types';
 
-type Category = { category: string };
-type SubmitArticleClientProps = { categories: Category[] };
+type Category = {
+  category: string;
+};
+
+type SubmitArticleClientProps = {
+  categories: Category[];
+};
+
+// Helper function to convert a file to a base64 string
+const toBase64 = (file: File): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = error => reject(error);
+  });
 
 const SubmitArticleClient = ({ categories }: SubmitArticleClientProps) => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const supabase = createSupabaseBrowserClient();
 
-  const [editingArticle, setEditingArticle] = useState<Article | null>(null);
   const [headline, setHeadline] = useState('');
   const [content, setContent] = useState('');
-  const [articleType, setArticleType] = useState('Factual');
-  const [category, setCategory] = useState<string>('');
+  const [category, setCategory] = useState('');
   const [sources, setSources] = useState<Source[]>([]);
-  const [newUrl, setNewUrl] = useState('');
+  const [newSource, setNewSource] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [verificationResult, setVerificationResult] = useState<any | null>(null);
+  const [analysisKey, setAnalysisKey] = useState(0); // Key to force re-render
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [isParsing, setIsParsing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
-
-  const [verificationResult, setVerificationResult] = useState<any>(null);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [analysisKey, setAnalysisKey] = useState(0);
-
-  const [linkStatuses, setLinkStatuses] = useState<{
-    [url: string]: { status: 'valid' | 'invalid' | 'broken' | 'checking'; reason?: string };
-  }>({});
 
   useEffect(() => {
-    const draftId = searchParams.get('draftId');
-    if (!draftId) return;
-
-    const fetchDraft = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data: draft, error: draftError } = await supabase
-        .from('articles')
-        .select('*')
-        .eq('id', draftId)
-        .eq('author_id', user.id)
-        .single();
-
-      if (draftError || !draft) {
-        setError('Could not load the specified draft.');
-        return;
-      }
-
-      setEditingArticle(draft);
-      setHeadline(draft.headline || '');
-      setContent(draft.content || '');
-      setCategory(draft.category || '');
-      setArticleType(draft.article_type || 'Factual');
-      setSources(draft.sources || []);
-
-      if (draft.analysis_result) {
-        setVerificationResult(draft.analysis_result);
-        setAnalysisKey(prev => prev + 1);
-      }
-    };
-
-    fetchDraft();
-  }, [searchParams, supabase]);
-
-  const checkLinkStatus = async (url: string) => {
-    if (!url || linkStatuses[url]?.status === 'valid') return;
-    setLinkStatuses(prev => ({ ...prev, [url]: { status: 'checking' } }));
-    try {
-      const response = await fetch(`/api/check-url?url=${encodeURIComponent(url)}`);
-      if (!response.ok) throw new Error('API request failed');
-      const data = await response.json();
-      setLinkStatuses(prev => ({ ...prev, [url]: { status: data.status, reason: data.reason } }));
-    } catch (err) {
-      console.error(`Error checking URL ${url}:`, err);
-      setLinkStatuses(prev => ({ ...prev, [url]: { status: 'invalid', reason: 'Failed to check URL.' } }));
+    const url = searchParams.get('url');
+    if (url) {
+      setSources(prev => [...prev, { type: 'url', value: url, name: url }]);
     }
-  };
+  }, [searchParams]);
 
-  const handleAddUrl = () => {
-    if (newUrl && sources.every(s => s.value !== newUrl)) {
-      setSources(prev => [...prev, { type: 'url', value: newUrl }]);
-      setNewUrl('');
-      checkLinkStatus(newUrl);
+  const handleAddSource = () => {
+    if (newSource.trim()) {
+      setSources(prev => [...prev, { type: 'url', value: newSource.trim(), name: newSource.trim() }]);
+      setNewSource('');
     }
   };
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file) return;
-
-    const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/gif'];
-    if (!allowedTypes.includes(file.type) || file.size > 5 * 1024 * 1024) {
-      setError('Please upload a PDF or image file under 5MB.');
-      return;
-    }
-
-    setIsParsing(true);
-    setError(null);
-
-    try {
-      if (file.type === 'application/pdf') {
-        const pdfjs: any = await import('pdfjs-dist');
-        pdfjs.GlobalWorkerOptions.workerSrc = `/pdf.worker.min.mjs`;
-
-        const arrayBuffer = await file.arrayBuffer();
-        const pdf = await pdfjs.getDocument(arrayBuffer).promise;
-        let fullText = '';
-        for (let i = 1; i <= pdf.numPages; i++) {
-          const page = await pdf.getPage(i);
-          const textContent = await page.getTextContent();
-          fullText += textContent.items.map((item: any) => ('str' in item ? item.str : '')).join(' ') + '\n';
-        }
-        setSources(prev => [...prev, { type: 'pdf', value: fullText, name: file.name }]);
-      } else {
-        const reader = new FileReader();
-        reader.onload = (loadEvent) => {
-            const base64String = loadEvent.target?.result as string;
-            setSources(prev => [...prev, { type: 'image', value: base64String, name: file.name }]);
-        };
-        reader.readAsDataURL(file);
+    if (file) {
+      try {
+        const base64 = await toBase64(file);
+        setSources(prev => [...prev, { type: 'image', value: base64, name: file.name }]);
+      } catch (err) {
+        console.error('Error converting file to base64:', err);
+        setError('Failed to process file. Please try again.');
       }
-    } catch (err) {
-      console.error('Error parsing file:', err);
-      setError('Failed to process the file.');
-    } finally {
-      setIsParsing(false);
-      if (event.target) event.target.value = '';
     }
   };
 
-  const handleRemoveSource = (index: number) => {
-    setSources(sources.filter((_, i) => i !== index));
-  };
-
-  const getStatusClass = (status: string) => {
-    switch (status) {
-      case 'valid': return styles.statusValid;
-      case 'invalid':
-      case 'broken': return styles.statusInvalid;
-      case 'checking': return styles.statusChecking;
-      default: return '';
-    }
-  };
-
-  const formatAIResponseWithLinks = (text: string, searchResults: { url: string }[] | undefined) => {
-    if (!searchResults || searchResults.length === 0) return text;
-    return text.replace(/\[([UE]\d+)\]/g, (match, citation) => {
-      const isExternal = citation.startsWith('E');
-      const index = parseInt(citation.substring(1), 10) - 1;
-      
-      if (isExternal && searchResults[index] && searchResults[index].url) {
-        return `[${citation}](${searchResults[index].url})`;
-      }
-      return match;
-    });
-  };
-
-  const parseAiResponse = (text: string) => {
-    if (!text) return null;
-
-    let cleanText = text.trim();
-    if (cleanText.startsWith('<think>')) {
-      const endIndex = cleanText.indexOf('</think>');
-      if (endIndex !== -1) {
-        cleanText = cleanText.substring(endIndex + '</think>'.length).trim();
-      }
-    }
-
-    const parsed: any = {
-      overallSummary: '',
-      claimByClaimSupport: '',
-      missingEvidence: '',
-      sourceQualityAssessment: '',
-      confidenceScore: null as number | null,
-      suggestedImprovements: '',
-      references: '',
-      raw: null as string | null,
-    };
-
-    if (!cleanText.startsWith('## NewsGrid AI Article Review')) {
-      parsed.raw = text;
-      return parsed;
-    }
-
-    const sections = cleanText.split(/\n###\s+\d+\.\s+/);
-    if (sections.length < 7) {
-      parsed.raw = text;
-      return parsed;
-    }
-
-    const extractContent = (sectionText: string) => {
-      if (!sectionText) return '';
-      const newlineIndex = sectionText.indexOf('\n');
-      return newlineIndex !== -1 ? sectionText.substring(newlineIndex + 1).trim() : sectionText.trim();
-    };
-
-    parsed.overallSummary = extractContent(sections[1]);
-    parsed.claimByClaimSupport = extractContent(sections[2]);
-    parsed.missingEvidence = extractContent(sections[3]);
-    parsed.sourceQualityAssessment = extractContent(sections[4]);
-
-    const confidence = extractContent(sections[5] || '');
-    const scoreMatch = confidence.match(/(\d+)\s*%/);
-    if (scoreMatch?.[1]) {
-      parsed.confidenceScore = parseInt(scoreMatch[1], 10);
-    }
-
-    parsed.suggestedImprovements = extractContent(sections[6] || '');
-    parsed.references = extractContent((sections[7] || '').split('---')[0]);
-
-    return parsed;
-  };
-
-  const handleAnalyze = async () => {
-    setIsAnalyzing(true);
-    setVerificationResult(null);
-    setError(null);
-
-    try {
-      const result = await verifyArticle({
-        headline,
-        content,
-        sources,
-        lastUpdated: new Date().toISOString(),
-      });
-
-      if (!result || typeof result !== 'object') {
-        setError('Analysis failed: empty response from server.');
-        return;
-      }
-
-      if ((result as any).error) {
-        setError((result as any).message || 'The AI reported an error.');
-        return;
-      }
-
-      const rawText: string | undefined = (result as any).text;
-      const searchResults: { url: string }[] | undefined = (result as any).searchResults;
-
-      if (!rawText || typeof rawText !== 'string') {
-        setError('Analysis returned no content.');
-        return;
-      }
-
-      const responseText = formatAIResponseWithLinks(rawText, searchResults);
-      const parsedData = parseAiResponse(responseText);
-      setVerificationResult(parsedData);
-      setAnalysisKey(k => k + 1);
-    } catch (e) {
-      console.error(e);
-      setError('An unexpected error occurred during analysis.');
-    } finally {
-      setIsAnalyzing(false);
-    }
+  const removeSource = (index: number) => {
+    setSources(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async (status: 'draft' | 'pending_review') => {
     setIsSubmitting(true);
     setError(null);
-    setSuccessMessage(null);
 
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('You must be logged in to save an article.');
-      const user = session.user;
-
-      if (status === 'pending_review' && (!category || !content.trim() || !headline.trim())) {
-        throw new Error('Headline, content, and category are required to submit for review.');
-      }
-
-      const finalHeadline = headline.trim() || 'Untitled Draft';
-      const generateSlug = (text: string) =>
-        text.toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim().replace(/\s+/g, '-').replace(/[^\w-]+/g, '').replace(/--+/g, '-');
-
-      let slugToSave: string;
-      if (status === 'pending_review') {
-        slugToSave = generateSlug(finalHeadline);
-        if (!slugToSave) throw new Error('Invalid headline.');
-      } else {
-        slugToSave = editingArticle?.slug || generateSlug(finalHeadline) || `draft-${Date.now().toString(36)}`;
-      }
-
-      const articleData: Partial<Article> & { author_id: string } = {
-        headline: finalHeadline, content, category, article_type: articleType, sources, status,
-        author_id: user.id, analysis_result: verificationResult, slug: slugToSave,
-      };
-
-      if (editingArticle?.id) articleData.id = editingArticle.id;
-
-      const { data, error: upsertError } = await supabase.from('articles').upsert(articleData).select().single();
-
-      if (upsertError) throw upsertError;
-
-      if (data) {
-        if (status === 'draft') {
-          if (!editingArticle) {
-            setEditingArticle(data);
-            router.replace(`/submit?draftId=${data.id}`);
-          }
-          setSuccessMessage('Draft saved successfully!');
-        } else {
-          setSuccessMessage('Article submitted successfully for review!');
-          router.push(`/article/${data.slug}`);
-        }
-      }
-    } catch (err: any) {
-      console.error('[Submit] Error:', err);
-      if (err.code === '23505') setError('An article with this headline already exists.');
-      else setError(`An error occurred: ${err.message}`);
-    } finally {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      setError('You must be logged in to submit an article.');
       setIsSubmitting(false);
+      return;
     }
+
+    const articleData = {
+      headline,
+      content,
+      category,
+      sources,
+      author_id: user.id,
+      status,
+      analysis_result: verificationResult,
+      last_updated: new Date().toISOString(),
+    };
+
+    const { data: insertedArticle, error: insertError } = await supabase
+      .from('articles')
+      .insert(articleData)
+      .select()
+      .single();
+
+    if (insertError) {
+      console.error('Error inserting article:', insertError);
+      setError(`Failed to submit article: ${insertError.message}`);
+    } else if (insertedArticle) {
+      console.log('Article submitted successfully:', insertedArticle);
+      router.push(`/article/${insertedArticle.slug}`);
+    }
+
+    setIsSubmitting(false);
   };
 
+  const handleAnalyze = async () => {
+    setIsAnalyzing(true);
+    setError(null);
+    setVerificationResult(null);
+
+    const result = await verifyArticle({
+      headline,
+      content,
+      sources,
+      lastUpdated: new Date().toISOString(),
+    });
+
+    if (result && result.error) {
+      setError(result.error);
+    } else if (result && result.analysis) {
+      setVerificationResult(result.analysis);
+      setAnalysisKey(prev => prev + 1); // Force re-render of report
+    } else {
+      setError('An unexpected error occurred during analysis.');
+    }
+    setIsAnalyzing(false);
+  };
+
+  const parseAiResponse = (text: string) => {
+    if (!text) return null;
+
+    // Strip out the <think> block
+    const cleanText = text.replace(/<think>[\s\S]*?<\/think>/, '').trim();
+
+    const sections: { [key: string]: string } = {};
+    const sectionHeaders = [
+      'Overall Summary',
+      'Claim-by-Claim Support',
+      'Missing Evidence or Unverified Claims',
+      'Source Quality Assessment',
+      'Fact-Check Confidence Score',
+      'Suggested Improvements',
+      'References'
+    ];
+
+    let remainingText = cleanText;
+    sectionHeaders.forEach((header, index) => {
+      const nextHeader = sectionHeaders[index + 1];
+      const headerRegex = new RegExp(`###?\\s*\\d*\\.\\s*${header.replace(/ /g, '\\s*')}`, 'i');
+      const match = remainingText.match(headerRegex);
+
+      if (match) {
+        let contentStartIndex = match.index! + match[0].length;
+        let contentEndIndex;
+
+        if (nextHeader) {
+          const nextHeaderRegex = new RegExp(`###?\\s*\\d*\\.\\s*${nextHeader.replace(/ /g, '\\s*')}`, 'i');
+          const nextMatch = remainingText.match(nextHeaderRegex);
+          contentEndIndex = nextMatch ? nextMatch.index : remainingText.length;
+        } else {
+          contentEndIndex = remainingText.length;
+        }
+
+        const sectionContent = remainingText.substring(contentStartIndex, contentEndIndex).trim();
+        const key = header.toLowerCase().replace(/ /g, '_');
+        sections[key] = sectionContent;
+      }
+    });
+
+    return {
+      overallSummary: sections.overall_summary || '',
+      claimByClaim: sections['claim-by-claim_support'] || '',
+      missingEvidence: sections['missing_evidence_or_unverified_claims'] || '',
+      sourceQuality: sections.source_quality_assessment || '',
+      confidenceScore: sections['fact-check_confidence_score'] || '',
+      suggestions: sections.suggested_improvements || '',
+      references: sections.references || '',
+    };
+  };
+
+  const parsedResponse = verificationResult ? parseAiResponse(verificationResult) : null;
+  const confidenceScoreValue = parsedResponse?.confidenceScore ? parseInt(parsedResponse.confidenceScore.replace('%', ''), 10) : null;
+
+
   return (
-    <div className={styles.submitContainer}>
-      <h1 className={styles.title}>{editingArticle ? 'Edit Your Article' : 'Submit an Article'}</h1>
+    <div className={styles.container}>
+      <h1 className={styles.title}>Submit an Article for Verification</h1>
 
-      {error && <p className={styles.errorBanner}>{error}</p>}
-      {successMessage && <p className={styles.successBanner}>{successMessage}</p>}
+      {error && <p className={styles.error}>{error}</p>}
 
-      <form onSubmit={(e) => e.preventDefault()} className={styles.form}>
+      <div className={styles.form}>
         <div className={styles.formGroup}>
           <label htmlFor="headline" className={styles.label}>Headline</label>
-          <input type="text" id="headline" value={headline} onChange={(e) => setHeadline(e.target.value)} className={styles.input} required />
+          <input
+            type="text"
+            id="headline"
+            value={headline}
+            onChange={(e) => setHeadline(e.target.value)}
+            className={styles.input}
+            placeholder="Enter the article headline"
+          />
         </div>
+
         <div className={styles.formGroup}>
           <label htmlFor="content" className={styles.label}>Content</label>
-          <textarea id="content" value={content} onChange={(e) => setContent(e.target.value)} className={styles.textarea} rows={15} required />
+          <textarea
+            id="content"
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            className={styles.textarea}
+            placeholder="Paste the full article content here"
+            rows={15}
+          />
         </div>
+
         <div className={styles.formGroup}>
           <label htmlFor="category" className={styles.label}>Category</label>
-          <select id="category" value={category} onChange={(e) => setCategory(e.target.value)} className={styles.select}>
-            <option value="">Select a category...</option>
-            {categories.map((c) => (<option key={c.category} value={c.category}>{c.category}</option>))}
+          <select
+            id="category"
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            className={styles.select}
+          >
+            <option value="" disabled>Select a category</option>
+            {categories.map((cat) => (
+              <option key={cat.category} value={cat.category}>{cat.category}</option>
+            ))}
           </select>
         </div>
-        <fieldset className={styles.sourcesFieldset}>
-          <legend className={styles.label}>Sources</legend>
-          <div className={styles.sourceInputContainer}>
-            <label htmlFor="new-url" className={styles.label}>Add URL Source</label>
-            <div className={styles.urlInputGroup}>
-              <input type="url" id="new-url" value={newUrl} onChange={(e) => setNewUrl(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddUrl(); }}} />
-              <button type="button" onClick={handleAddUrl} className={styles.button}>Add URL</button>
-            </div>
-          </div>
-          <button type="button" onClick={() => fileInputRef.current?.click()} className={`${styles.button} ${styles.uploadPdfButton}`}>Upload Document</button>
-          <input type="file" ref={fileInputRef} onChange={handleFileChange} className={styles.hiddenInput} accept="application/pdf,image/*" />
-          <div className={styles.sourcesList}>
+
+        <div className={styles.formGroup}>
+          <label className={styles.label}>Sources</label>
+          <div className={styles.sourceList}>
             {sources.map((source, index) => (
-              <div key={index} className={styles.sourceItem}>
-                <span className={styles.sourceIcon}>{source.type === 'url' ? '🔗' : '📄'}</span>
-                <span className={styles.sourceValue}>{source.name || source.value}</span>
-                {source.type === 'url' && linkStatuses[source.value] && (<span className={`${styles.statusPill} ${getStatusClass(linkStatuses[source.value].status)}`}>{linkStatuses[source.value].status}</span>)}
-                <button type="button" onClick={() => handleRemoveSource(index)} className={styles.removeButton}>×</button>
+              <div key={index} className={styles.sourceTag}>
+                <span>{source.name || source.value}</span>
+                <button onClick={() => removeSource(index)} className={styles.removeButton}>&times;</button>
               </div>
             ))}
           </div>
-        </fieldset>
+          <div className={styles.sourceInputContainer}>
+            <input
+              type="text"
+              value={newSource}
+              onChange={(e) => setNewSource(e.target.value)}
+              className={styles.input}
+              placeholder="Add a URL source"
+              onKeyDown={(e) => e.key === 'Enter' && handleAddSource()}
+            />
+            <button onClick={handleAddSource} className={styles.addButton}>Add URL</button>
+            <button onClick={() => fileInputRef.current?.click()} className={styles.addButton}>
+              Add File
+            </button>
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileChange}
+              style={{ display: 'none' }}
+              accept="image/*,.pdf"
+            />
+          </div>
+        </div>
 
-        <div className={styles.aiVerificationSection}>
-          <button type="button" onClick={handleAnalyze} disabled={isAnalyzing || !headline || !content} className={styles.analyzeButton}>
+        <div className={styles.actions}>
+          <button
+            onClick={handleAnalyze}
+            disabled={isAnalyzing || !headline || !content}
+            className={`${styles.button} ${styles.analyzeButton}`}
+          >
             {isAnalyzing ? 'Analyzing...' : 'Analyze Article Credibility'}
           </button>
+        </div>
+      </div>
 
-          {isAnalyzing && (
-            <div className={styles.analysisContainer}>
-              <div className={styles.loader}></div>
-              <p>Analyzing... this may take a moment.</p>
-            </div>
-          )}
+      {isAnalyzing && (
+        <div className={styles.loading}>
+          <div className={styles.spinner}></div>
+          <p>Analyzing... this may take a moment.</p>
+        </div>
+      )}
 
-          {verificationResult && !isAnalyzing && (
-            <div key={analysisKey} className={styles.aiReport}>
-              <h2 className={styles.reportTitle}>NewsGrid AI Article Review</h2>
-              {verificationResult.raw ? (
+      {verificationResult && !isAnalyzing && (
+        <div key={analysisKey} className={`${styles.aiReport} ${styles.fadeIn}`}>
+          <h2 className={styles.reportTitle}>AI Credibility Report</h2>
+          {parsedResponse ? (
+            <div>
+              {parsedResponse.overallSummary && (
                 <div className={styles.reportSection}>
-                  <h3>Raw AI Response</h3>
-                  <pre style={{ whiteSpace: 'pre-wrap', background: '#222', padding: '1rem', borderRadius: 8 }}>{verificationResult.raw}</pre>
+                  <h3>1. Overall Summary</h3>
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{parsedResponse.overallSummary}</ReactMarkdown>
                 </div>
-              ) : (
-                <>
-                  {verificationResult.confidenceScore !== null && <div className={styles.trustScoreSection}><TrustScoreMeter score={verificationResult.confidenceScore} /></div>}
-                  {verificationResult.overallSummary && <div className={styles.reportSection}><h3>1. Overall Summary</h3><ReactMarkdown remarkPlugins={[remarkGfm]}>{verificationResult.overallSummary}</ReactMarkdown></div>}
-                  {verificationResult.claimByClaimSupport && <div className={styles.reportSection}><h3>2. Claim-by-Claim Support</h3><ReactMarkdown remarkPlugins={[remarkGfm]}>{verificationResult.claimByClaimSupport}</ReactMarkdown></div>}
-                  {verificationResult.missingEvidence && <div className={styles.reportSection}><h3>3. Missing Evidence or Unverified Claims</h3><ReactMarkdown remarkPlugins={[remarkGfm]}>{verificationResult.missingEvidence}</ReactMarkdown></div>}
-                  {verificationResult.sourceQualityAssessment && <div className={styles.reportSection}><h3>4. Source Quality Assessment</h3><ReactMarkdown remarkPlugins={[remarkGfm]}>{verificationResult.sourceQualityAssessment}</ReactMarkdown></div>}
-                  {verificationResult.confidenceScore !== null && <div className={styles.reportSection}><h3>5. Fact-Check Confidence Score</h3><p>{verificationResult.confidenceScore}%</p></div>}
-                  {verificationResult.suggestedImprovements && <div className={styles.reportSection}><h3>6. Suggested Improvements</h3><ReactMarkdown remarkPlugins={[remarkGfm]}>{verificationResult.suggestedImprovements}</ReactMarkdown></div>}
-                  {verificationResult.references && <div className={styles.reportSection}><h3>7. References</h3><ReactMarkdown remarkPlugins={[remarkGfm]}>{verificationResult.references}</ReactMarkdown></div>}
-                </>
+              )}
+              {parsedResponse.claimByClaim && (
+                <div className={styles.reportSection}>
+                  <h3>2. Claim-by-Claim Support</h3>
+                  <ReactMarkdown remarkPlugins={[remarkGfm]} className={styles.claimByClaim}>{parsedResponse.claimByClaim}</ReactMarkdown>
+                </div>
+              )}
+              {parsedResponse.missingEvidence && (
+                <div className={styles.reportSection}>
+                  <h3>3. Missing Evidence or Unverified Claims</h3>
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{parsedResponse.missingEvidence}</ReactMarkdown>
+                </div>
+              )}
+              {parsedResponse.sourceQuality && (
+                <div className={styles.reportSection}>
+                  <h3>4. Source Quality Assessment</h3>
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{parsedResponse.sourceQuality}</ReactMarkdown>
+                </div>
+              )}
+              {confidenceScoreValue !== null && (
+                <div className={`${styles.reportSection} ${styles.trustScoreSection}`}>
+                  <h3>5. Fact-Check Confidence Score</h3>
+                  <TrustScoreMeter score={confidenceScoreValue} />
+                </div>
+              )}
+              {parsedResponse.suggestions && (
+                <div className={styles.reportSection}>
+                  <h3>6. Suggested Improvements</h3>
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{parsedResponse.suggestions}</ReactMarkdown>
+                </div>
+              )}
+              {parsedResponse.references && (
+                <div className={styles.reportSection}>
+                  <h3>7. References</h3>
+                  <ReactMarkdown remarkPlugins={[remarkGfm]} className={styles.references}>{parsedResponse.references}</ReactMarkdown>
+                </div>
               )}
             </div>
+          ) : (
+            <div>
+              <h4>Raw AI Response</h4>
+              <p className={styles.error}>The AI response did not match the expected format. Displaying the raw output:</p>
+              <pre className={styles.rawOutput}>{verificationResult}</pre>
+            </div>
           )}
         </div>
+      )}
 
-        <div className={styles.formActions}>
-          <button type="button" onClick={() => handleSubmit('draft')} disabled={isSubmitting} className={`${styles.button} ${styles.saveDraftButton}`}>
-            {isSubmitting ? 'Saving...' : 'Save Draft'}
-          </button>
-          <button type="button" onClick={() => handleSubmit('pending_review')} disabled={isSubmitting || !headline || !content || !category} className={`${styles.button} ${styles.submitButton}`}>
-            {isSubmitting ? 'Submitting...' : 'Submit for Review'}
-          </button>
-        </div>
-      </form>
+      <div className={styles.submissionActions}>
+        <button
+          onClick={() => handleSubmit('draft')}
+          disabled={isSubmitting || !headline || !content || !category}
+          className={`${styles.button} ${styles.draftButton}`}
+        >
+          {isSubmitting ? 'Saving...' : 'Save as Draft'}
+        </button>
+        <button
+          type="button"
+          onClick={() => handleSubmit('pending_review')}
+          disabled={isSubmitting || !headline || !content || !category}
+          className={`${styles.button} ${styles.submitButton}`}
+        >
+          {isSubmitting ? 'Submitting...' : 'Submit for Review'}
+        </button>
+      </div>
     </div>
   );
 };
