@@ -1,7 +1,7 @@
 // A new type to represent a single source, which can be a URL or PDF content.
 export type Source = {
-  type: 'url' | 'pdf';
-  // 'value' holds the URL string or the extracted text content from a PDF.
+  type: 'url' | 'pdf' | 'image';
+  // 'value' holds the URL string, the extracted text content from a PDF, or a base64 image string.
   value: string;
   // 'name' is optional, useful for displaying the original filename of a PDF.
   name?: string;
