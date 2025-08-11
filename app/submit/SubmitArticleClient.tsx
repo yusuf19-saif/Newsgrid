@@ -127,14 +127,15 @@ const SubmitArticleClient = ({ categories }: SubmitArticleClientProps) => {
       lastUpdated: new Date().toISOString(),
     });
 
-    if (result && result.error) {
-      setError(result.error);
-    } else if (result && result.analysis) {
-      setVerificationResult(result.analysis);
-      setAnalysisKey(prev => prev + 1); // Force re-render of report
+    if (result?.error) {
+      setError(result.message || 'AI request failed. Please try again shortly.');
+    } else if (result?.text) {
+      setVerificationResult(result.text);
+      setAnalysisKey(prev => prev + 1);
     } else {
       setError('An unexpected error occurred during analysis.');
     }
+
     setIsAnalyzing(false);
   };
 
