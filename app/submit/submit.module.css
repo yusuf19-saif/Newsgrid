@@ -1441,3 +1441,123 @@
   margin-top: 1rem;
 }
 */
+
+/* --- UI polish overrides (append at end) --- */
+
+.submitContainer {
+  max-width: 900px;
+  margin: 2rem auto;
+  padding: 2rem 2rem 1.5rem;
+  background-color: var(--background-primary);
+  border: 1px solid var(--border-primary);
+  border-radius: 16px;
+  box-shadow: var(--shadow-md);
+}
+
+.title {
+  margin-bottom: 1.25rem;
+}
+
+.label {
+  color: var(--text-secondary);
+  font-weight: 600;
+  letter-spacing: 0.2px;
+}
+
+.input,
+.textarea,
+.select {
+  background-color: var(--background-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: 10px;
+}
+
+.input:focus,
+.textarea:focus,
+.select:focus {
+  border-color: #4a69e2;
+  box-shadow: 0 0 0 3px rgba(74,105,226,0.2);
+}
+
+.sourcesGroup {
+  background: var(--background-primary);
+  border: 1px solid var(--border-primary);
+  border-radius: 14px;
+  box-shadow: var(--shadow-sm);
+}
+
+.sourcesList .sourceItem {
+  background-color: var(--background-secondary);
+  border-radius: 10px;
+}
+
+.removeButton:hover {
+  background-color: var(--background-tertiary);
+  border-radius: 6px;
+}
+
+.addSourceForm .button {
+  background-color: var(--background-accent);
+  color: var(--text-primary);
+  border: 1px solid var(--border-primary);
+}
+.addSourceForm .button:hover {
+  background-color: var(--border-primary);
+}
+
+.aiVerificationSection {
+  margin-top: .5rem;
+  padding: 1.25rem;
+  border: 1px solid var(--border-primary);
+  border-radius: 12px;
+  background: var(--background-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Big primary CTA */
+.analyzeButton {
+  width: 100%;
+  padding: 1rem 1.25rem;
+  font-size: 1.05rem;
+  border: 0;
+  color: #fff;
+  background: linear-gradient(135deg, #4a69e2, #7c5cff);
+  border-radius: 12px;
+  transition: transform .15s ease, filter .15s ease, opacity .2s ease;
+}
+.analyzeButton:hover:not(:disabled) {
+  transform: translateY(-1px);
+  filter: brightness(1.05);
+}
+.analyzeButton:disabled {
+  opacity: .6;
+  cursor: not-allowed;
+}
+
+.formActions {
+  margin-top: 1.25rem;
+  display: flex;
+  justify-content: space-between;
+  gap: .75rem;
+}
+
+.saveDraftButton {
+  background-color: transparent;
+  color: var(--text-primary);
+  border: 1px solid var(--border-primary);
+  border-radius: 10px;
+}
+.saveDraftButton:hover:not(:disabled) {
+  background-color: var(--background-secondary);
+}
+
+.submitButton {
+  border-radius: 10px;
+  background: var(--button-primary-bg);
+  color: var(--button-primary-text);
+  border: 1px solid var(--button-primary-bg);
+}
+.submitButton:hover:not(:disabled) {
+  background: var(--button-primary-hover-bg);
+  border-color: var(--button-primary-hover-bg);
+}
