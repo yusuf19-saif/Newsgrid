@@ -335,3 +335,17 @@
   border-color: var(--button-primary-hover-bg);
   text-decoration: none; /* For Link components styled as buttons */
 }
+
+/* Remove green hover from header icon buttons */
+.sidebarToggleButton,
+.sidebarToggleButton:hover,
+.sidebarToggleButton:focus,
+.sidebarToggleButton:active,
+.mobileMenuButton,
+.mobileMenuButton:hover,
+.mobileMenuButton:focus,
+.mobileMenuButton:active {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}

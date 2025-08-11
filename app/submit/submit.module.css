@@ -1561,3 +1561,17 @@
   background: var(--button-primary-hover-bg);
   border-color: var(--button-primary-hover-bg);
 }
+
+/* Remove green hover from header icon buttons */
+.sidebarToggleButton,
+.sidebarToggleButton:hover,
+.sidebarToggleButton:focus,
+.sidebarToggleButton:active,
+.mobileMenuButton,
+.mobileMenuButton:hover,
+.mobileMenuButton:focus,
+.mobileMenuButton:active {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
