@@ -1371,3 +1371,73 @@
     align-items: stretch; /* Make items take full width */
   }
 }
+
+/* === NEW STYLES for Claim-by-Claim section === */
+
+/* Target the container for the markdown content within a report section */
+.reportSection > div {
+  line-height: 1.6;
+}
+
+/* Style the horizontal rule used to separate claims */
+.reportSection hr {
+  border: none;
+  border-top: 1px solid var(--border-primary);
+  margin: 1.5rem 0; /* More vertical space between claims */
+}
+
+/* Style the claim text itself (which will be a <p> with a <strong> tag) */
+.reportSection p > strong {
+  display: block;
+  margin-bottom: 0.75rem; /* Space between the claim and its details */
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+/* Style the bulleted list (<ul>) containing Verdict, Evidence, Notes */
+.reportSection ul {
+  list-style: none; /* Remove default bullets */
+  padding-left: 0;
+  margin-top: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem; /* Add a small gap between list items */
+}
+
+/* Style each list item (<li>) */
+.reportSection li {
+  color: var(--text-secondary);
+}
+
+/* Style the bolded labels inside each list item */
+.reportSection li > strong {
+  color: var(--text-primary);
+  margin-right: 0.5rem;
+}
+
+/* === REMOVE these styles for the Follow-up Section === */
+/*
+.followUpSection {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  border: 1px solid var(--border-primary);
+  border-radius: var(--border-radius-large);
+  background-color: var(--background-secondary);
+}
+
+.followUpTitle {
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 0.5rem 0;
+}
+
+.followUpSection p {
+  margin-bottom: 1.5rem;
+  color: var(--text-secondary);
+}
+
+.followUpSection .analyzeButton {
+  margin-top: 1rem;
+}
+*/

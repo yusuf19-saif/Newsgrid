@@ -1,6 +1,4 @@
 import { NextResponse } from 'next/server';
-import { scrapeUrl } from '../../../lib/scrapflyService';
-// No longer importing a type that doesn't exist
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -11,33 +9,43 @@ export async function GET(request: Request) {
   }
 
   try {
-    // 1. Scrape the URL to get the full result object.
-    const scrapeResult: any = await scrapeUrl(url);
-    const statusCode = scrapeResult.result.response_headers.status;
-
-    // 2. Use the status code for reliable checking.
-    if (statusCode === '404') {
+    // 1) HEAD first
+    const headRes = await fetch(url, { method: 'HEAD', redirect: 'follow' });
+    if (headRes.status === 404) {
       return NextResponse.json({ status: 'broken', reason: 'The page was not found (404 Error).' });
     }
-    
-    if (statusCode >= 400) {
-        return NextResponse.json({ status: 'broken', reason: `The page returned an error (Status: ${statusCode}).` });
+    if (headRes.status >= 400) {
+      return NextResponse.json({ status: 'broken', reason: `The page returned an error (Status: ${headRes.status}).` });
     }
 
-    // 3. Perform a minimal content check only on successful scrapes.
-    const wordCount = scrapeResult.result.content.trim().split(/\s+/).length;
-    if (wordCount < 50) { // Reduced word count threshold
+    // 2) Minimal GET content check
+    const getRes = await fetch(url, {
+      method: 'GET',
+      redirect: 'follow',
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.9',
+      },
+    });
+
+    if (getRes.status === 404) {
+      return NextResponse.json({ status: 'broken', reason: 'The page was not found (404 Error).' });
+    }
+    if (getRes.status >= 400) {
+      return NextResponse.json({ status: 'broken', reason: `The page returned an error (Status: ${getRes.status}).` });
+    }
+
+    const text = await getRes.text();
+    const wordCount = text.trim().split(/\s+/).length;
+    if (wordCount < 50) {
       return NextResponse.json({ status: 'broken', reason: `Page content is too short (${wordCount} words). Might be a captcha or empty page.` });
     }
 
     return NextResponse.json({ status: 'valid' });
-
-  } catch (error: unknown) {
-    let reason = "An unknown error occurred during scraping.";
-    if (error instanceof Error) {
-      reason = error.message;
-    }
-    console.error(`Scraping failed for ${url}. Reason: ${reason}`);
-    return NextResponse.json({ status: 'invalid', reason: reason });
+  } catch (err: any) {
+    const reason = err?.message || 'Network error while fetching URL.';
+    console.error(`URL check failed for ${url}. Reason: ${reason}`);
+    return NextResponse.json({ status: 'invalid', reason });
   }
 }

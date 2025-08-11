@@ -9,75 +9,103 @@ interface VerifyArticleInput {
   lastUpdated: string;
 }
 
+// Helper function to check if a source value is a base64 string
+function isBase64(str: string) {
+  if (!str || typeof str !== 'string') return false;
+  const base64Regex = /^data:image\/[a-zA-Z]+;base64,/;
+  return base64Regex.test(str);
+}
+
 export async function verifyArticle({ headline, content, sources, lastUpdated }: VerifyArticleInput) {
   const perplexityApiKey = process.env.PERPLEXITY_API_KEY;
   if (!perplexityApiKey) {
-    console.error('PERPLEXITY_API_KEY is not set in environment variables.');
-    return {
-      error: true,
-      message: 'The Perplexity API key is not configured on the server.'
-    };
+    return { error: true, message: 'The Perplexity API key is not configured on the server.' };
   }
 
   try {
-    const userSourcesText = sources.map((s, i) => `- User Source ${i + 1}: ${s.value}`).join('\n');
+    const textSources = sources.filter(s => s.type === 'url' || s.type === 'pdf');
+    const imageSources = sources.filter(s => s.type === 'image' && isBase64(s.value));
 
-    const prompt = `
-      You are a specialized AI assistant that completes a credibility report.
-      Your entire response MUST be the markdown content for the report. Nothing else.
-      - Do NOT write any introduction, conclusion, or conversational text.
-      - Do NOT include your reasoning or thought process.
-      - Fill out every section of the report template below.
+    const userSourcesText = textSources.map((s, i) => `- Text/URL Source ${i + 1}: ${s.value}`).join('\n');
+    
+    const systemPrompt = `
+You are NewsGrid’s Article Verification AI.
+Read the user’s article, break it into individual factual claims, verify each claim using the user-provided sources, and produce a structured fact-check report in markdown.
+External sources must NOT be included in the Claim-by-Claim Support section. Instead, any external evidence or suggestions for additional sourcing should be mentioned ONLY in the Suggested Improvements section.
 
-      --- CREDIBILITY REPORT (Fill this out) ---
-      ⏰ **Article Freshness**
-      - Last Updated: ${lastUpdated}
-      - Assessment: [Analyze the provided "Last Updated" date. State whether the article is recent, dated, or out-of-date for its topic. For example: "This article, updated today, is highly current." or "This information from 2019 is likely outdated."]
+Output ONLY the report in the exact format below—no extra commentary.
 
-      🔍 **1. Headline Analysis**
-      - Headline: "${headline}"
-      - Assessment: [Provide a one-sentence assessment of the headline. Is it neutral, sensationalized, biased, or clickbait?]
-      - Explanation: [Provide a brief explanation for your assessment of the headline.]
+## NewsGrid AI Article Review
 
-      🔗 **2. Claim & Source Analysis (User-Provided Sources)**
-      - User Sources: ${userSourcesText || 'None'}
-      - Instructions: Analyze the user-provided sources ONLY. Do not use external evidence here.
-      | Claim # | Supported by User Sources? | Notes (with citations to user sources) |
-      |---|---|---|
-      | 1 | | |
-      | 2 | | |
-      | 3 | | |
-      | 4 | | |
+### 1. Overall Summary
+[One concise paragraph summarising the article’s overall credibility, highlighting its main strengths, weaknesses, and any major issues.]
 
-      🌎 **3. External Evidence Analysis**
-      - Instructions: List the external URLs you found during your web search to verify the article's claims. For each source, provide a brief (1-2 sentence) explanation of why it is relevant.
-      - Example Source:
-        - **URL:** https://www.noaa.gov/news-release/noaa-predicts-above-normal-2024-atlantic-hurricane-season
-        - **Relevance:** This official forecast from the National Oceanic and Atmospheric Administration provides context for hurricane season predictions, which is relevant to the article's subject.
-      - [List your found sources and their relevance here.]
+### 2. Claim-by-Claim Support
+Extract each distinct factual claim and present it in the following format, separated by a markdown horizontal rule (\`---\`):
 
-      📊 **4. Trust Score Breakdown**
-      | Category | Score | Rationale |
-      |---|---|---|
-      | Headline Accuracy | /20 | |
-      | Source Quality (User & External) | /20 | |
-      | Claim Support (User & External) | /30 | |
-      | Tone & Bias | /10 | |
-      | Structure & Clarity | /10 | |
-      | Bonus | /10 | |
-      | **Total** | **/100** | |
+**Claim:** "Exact claim text from the article, in quotes."
+- **Verdict:** Supported ✅ | Partially Supported ⚠️ | Unsupported ❌ | Needs Context ℹ️
+- **User-Provided Evidence:** [List user source references as [U1], [U2], etc., or "None found."]
+- **Notes:** [Brief explanation of the verdict and reasoning.]
 
-      💡 **5. Suggestions for Improvement**
-      - Suggestion 1:
-      - Suggestion 2:
-      - Suggestion 3:
+### 3. Missing Evidence or Unverified Claims
+[List any claims that could not be verified with user sources, and specify what evidence is needed.]
 
-      🧾 **6. Final Summary**
-      [Your summary here, with citations]
+### 4. Source Quality Assessment
+[List each user-provided source in a table with credibility rating: High Credibility | Moderate Credibility | Low Credibility | Satirical/Unreliable, plus a short note.]
 
-      📚 **7. References**
-      [List all sources here as a numbered list. First, list every user-provided source and add "[User provided]" after each. Then, list any new, relevant sources you found during your web search. If a user-provided source is irrelevant, you must still list it, but add the note "(Note: This source was found to be irrelevant to the article's core claims)" next to it.]
-    `;
+### 5. Fact-Check Confidence Score
+[Give a percentage score representing your confidence in the article’s overall factual accuracy based on user sources.]
+
+### 6. Suggested Improvements
+[Provide clear, actionable recommendations to improve the article’s credibility, sourcing, and clarity.
+Include any relevant EXTERNAL EVIDENCE references here that the AI found independently to strengthen or challenge claims.
+List these external sources as [E1], [E2], etc.]
+
+### 7. References
+List **user-provided sources first**, numbered as [U1], [U2], etc., followed by **external sources from the improvements section**, numbered as [E1], [E2], etc.
+Each reference must be on its own line.
+
+---
+Rules:
+- In Claim-by-Claim Support, include ONLY user-provided evidence.
+- Mention external evidence ONLY in the Suggested Improvements section.
+- Never fabricate sources.
+- Output ONLY the markdown report—no extra commentary or code fences.
+`.trim();
+
+    const messages: any[] = [
+      {
+        role: 'user',
+        content: [
+          {
+            type: 'text',
+            text: `
+Article Metadata
+- Headline: "${headline}"
+- Last Updated: ${lastUpdated}
+
+User-Provided Text/URL Sources:
+${userSourcesText || 'None'}
+
+Article Content:
+${content}
+`
+          }
+        ]
+      }
+    ];
+
+    if (imageSources.length > 0) {
+      imageSources.forEach(imgSource => {
+        messages[0].content.push({
+          type: 'image_url',
+          image_url: {
+            url: imgSource.value
+          }
+        });
+      });
+    }
 
     const response = await fetch('https://api.perplexity.ai/chat/completions', {
       method: 'POST',
@@ -87,28 +115,31 @@ export async function verifyArticle({ headline, content, sources, lastUpdated }:
       },
       body: JSON.stringify({
         model: 'sonar-reasoning-pro',
-        messages: [{ role: 'user', content: prompt }],
+        messages: messages,
         return_sources: true,
       }),
     });
 
     if (!response.ok) {
-      const errorBody = await response.text();
+      const errorBody = await response.text().catch(() => '');
       console.error(`Perplexity API error: ${response.status} ${response.statusText}`, errorBody);
-      throw new Error(`Perplexity API request failed`);
+      return { error: true, message: 'AI request failed. Please try again shortly.' };
     }
 
     const data = await response.json();
-    const text = data.choices[0].message.content;
-    const searchResults = data.choices[0].sources;
+    const text = data?.choices?.[0]?.message?.content ?? '';
+    const searchResults = data?.choices?.[0]?.sources ?? [];
+
+    if (!text || typeof text !== 'string') {
+      return { error: true, message: 'AI returned an empty response. Please try again.' };
+    }
 
     return { text, searchResults };
-
   } catch (error) {
     console.error('Error in verifyArticle:', error);
     return {
       error: true,
-      message: 'Failed to get a response from the AI. This may be due to a temporary issue or high demand. Please try again in a moment.'
+      message: 'Failed to get a response from the AI. Please try again.'
     };
   }
 }
