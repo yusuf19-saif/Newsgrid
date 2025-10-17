@@ -29,58 +29,62 @@ export async function verifyArticle({ headline, content, sources, lastUpdated }:
     const userSourcesText = textSources.map((s, i) => `- Text/URL Source ${i + 1}: ${s.value}`).join('\n');
     
     const systemPrompt = `
-You are NewsGrid’s Article Verification AI.
-Read the user’s article, break it into individual factual claims, verify each claim using the user-provided sources, and produce a structured fact-check report in markdown.
-External sources must NOT be included in the Claim-by-Claim Support section. Instead, any external evidence or suggestions for additional sourcing should be mentioned ONLY in the Suggested Improvements section.
+**CRITICAL INSTRUCTIONS:**
+1.  Your response **MUST** be ONLY the markdown report text.
+2.  Your response **MUST** begin **EXACTLY** with "## NewsGrid AI Article Review" and nothing before it.
+3.  You **MUST NOT** include any commentary, greetings, or \`<think>\` blocks.
+4.  Follow the template below precisely.
 
-Output ONLY the report in the exact format below—no extra commentary.
-
+**TEMPLATE:**
 ## NewsGrid AI Article Review
 
 ### 1. Overall Summary
-[One concise paragraph summarising the article’s overall credibility, highlighting its main strengths, weaknesses, and any major issues.]
+[Brief summary of credibility based on user sources.]
 
 ### 2. Claim-by-Claim Support
-Extract each distinct factual claim and present it in the following format, separated by a markdown horizontal rule (\`---\`):
-
-**Claim:** "Exact claim text from the article, in quotes."
+[For each factual claim, use this format, separated by \`---\`:]
+**Claim:** "Exact claim text."
 - **Verdict:** Supported ✅ | Partially Supported ⚠️ | Unsupported ❌ | Needs Context ℹ️
-- **User-Provided Evidence:** [List user source references as [U1], [U2], etc., or "None found."]
-- **Notes:** [Brief explanation of the verdict and reasoning.]
+- **User-Provided Evidence:** [Reference user sources like [U1], [U2], or "None found."]
+- **Notes:** [Brief reasoning.]
 
 ### 3. Missing Evidence or Unverified Claims
-[List any claims that could not be verified with user sources, and specify what evidence is needed.]
+[List claims not verifiable with user sources.]
 
 ### 4. Source Quality Assessment
-[List each user-provided source in a table with credibility rating: High Credibility | Moderate Credibility | Low Credibility | Satirical/Unreliable, plus a short note.]
+[Assess each user-provided source's credibility.]
 
 ### 5. Fact-Check Confidence Score
-[Give a percentage score representing your confidence in the article’s overall factual accuracy based on user sources.]
+[A percentage score based ONLY on user-provided sources.]
 
 ### 6. Suggested Improvements
-[Provide clear, actionable recommendations to improve the article’s credibility, sourcing, and clarity.
-Include any relevant EXTERNAL EVIDENCE references here that the AI found independently to strengthen or challenge claims.
-List these external sources as [E1], [E2], etc.]
+[Provide actionable advice. If you found external evidence, mention it ONLY here and list it in References as [E1], [E2], etc.]
 
 ### 7. References
-List **user-provided sources first**, numbered as [U1], [U2], etc., followed by **external sources from the improvements section**, numbered as [E1], [E2], etc.
-Each reference must be on its own line.
+[List user sources as [U1], [U2]... then external sources as [E1], [E2]...]
 
 ---
-Rules:
-- In Claim-by-Claim Support, include ONLY user-provided evidence.
-- Mention external evidence ONLY in the Suggested Improvements section.
-- Never fabricate sources.
-- Output ONLY the markdown report—no extra commentary or code fences.
-`.trim();
+**YOUR ROLE:**
+You are NewsGrid’s Article Verification AI. Your task is to analyze the user's article against the user-provided sources and generate the fact-check report using the template above.
 
-    const messages: any[] = [
+**RULES:**
+- **External Evidence:** External sources you find MUST NOT influence the "Claim-by-Claim Support" or "Fact-Check Confidence Score". They are ONLY for the "Suggested Improvements" section.
+- **Input Validity:** If the user's article content is nonsensical, a question, or too short, do not analyze it. Your ONLY output should be a report with the "Overall Summary" stating the input was not a valid article, and all other sections left empty.
+    `.trim();
+
+    // before: const messages: any[] = [ { role: 'user', content: [ ... ] } ];
+
+const messages: any[] = [
+  {
+    role: 'system',
+    content: systemPrompt,
+  },
+  {
+    role: 'user',
+    content: [
       {
-        role: 'user',
-        content: [
-          {
-            type: 'text',
-            text: `
+        type: 'text',
+        text: `
 Article Metadata
 - Headline: "${headline}"
 - Last Updated: ${lastUpdated}
@@ -90,22 +94,21 @@ ${userSourcesText || 'None'}
 
 Article Content:
 ${content}
-`
-          }
-        ]
+`.trim()
       }
-    ];
+    ]
+  }
+];
 
-    if (imageSources.length > 0) {
-      imageSources.forEach(imgSource => {
-        messages[0].content.push({
-          type: 'image_url',
-          image_url: {
-            url: imgSource.value
-          }
-        });
-      });
-    }
+// keep the image blocks push the same way
+if (imageSources.length > 0) {
+  imageSources.forEach(imgSource => {
+    (messages[1].content as any[]).push({
+      type: 'image_url',
+      image_url: { url: imgSource.value }
+    });
+  });
+}
 
     const response = await fetch('https://api.perplexity.ai/chat/completions', {
       method: 'POST',
@@ -134,6 +137,7 @@ ${content}
       return { error: true, message: 'AI returned an empty response. Please try again.' };
     }
 
+    // Since the prompt now handles bad input, we just return the text.
     return { text, searchResults };
   } catch (error) {
     console.error('Error in verifyArticle:', error);

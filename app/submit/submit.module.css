@@ -1575,3 +1575,68 @@
   border: none !important;
   box-shadow: none !important;
 }
+
+.formGroup {
+  margin-bottom: 24px;
+}
+
+.imageUploadContainer {
+  margin-top: 8px;
+}
+
+.uploadImageButton {
+  width: 100%;
+  padding: 24px 12px;
+  border: 2px solid var(--border-color);
+  background-color: transparent;
+  color: var(--text-secondary);
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+  font-size: 1rem;
+}
+
+.uploadImageButton:hover {
+  background-color: var(--background-hover);
+  border-color: var(--primary-color);
+}
+
+.imagePreview {
+  position: relative;
+  margin-top: 10px;
+  max-width: 400px;
+}
+
+.imagePreview img {
+  width: 100%;
+  height: auto;
+  border-radius: var(--border-radius);
+  border: 1px solid var(--border-color);
+}
+
+.removeImageButton {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  font-size: 20px;
+  line-height: 28px;
+  text-align: center;
+  cursor: pointer;
+  padding: 0;
+  transition: background-color 0.2s ease;
+}
+
+.removeImageButton:hover {
+  background: rgba(0, 0, 0, 0.8);
+}
+
+.sourceInputContainer {
+  display: flex;
+  gap: 8px;
+}

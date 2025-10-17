@@ -20,20 +20,19 @@ export type UserProfile = {
 
 export type Article = {
   id: string;
-  created_at: string;
   headline: string;
   content: string;
   category: string;
-  sources: Source[] | null; // <-- CORRECTED: Can now be an array or null
-  author_id: string | null;
-  excerpt: string | null;
-  last_updated: string | null;
-  slug: string | null;
-  status: string; // <-- This is now required
-  article_type?: string; // Should be optional
-  analysis_result?: any | null; // Should be optional
-  // This allows for the joined author's username
-  profiles?: {
-    username: string;
-  } | null;
+  author_id: string;
+  status: 'draft' | 'pending_review' | 'published' | 'rejected';
+  created_at: string;
+  last_updated: string;
+  slug: string;
+  excerpt: string;
+  author_name: string;
+  author_avatar_url: string;
+  sources: Source[];
+  analysis_result: any;
+  trust_score: number | null;
+  image_url?: string | null;
 };
