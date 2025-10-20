@@ -207,7 +207,7 @@ const SubmitArticleClient = ({ categories }: SubmitArticleClientProps) => {
 
     // Find all the headers that are present in the text
     const headerRegex = new RegExp(`###?\\s*(?:\\d+\\.\\s*)?(${headers.join('|')})`, 'gi');
-    const headerMatches = [...cleanText.matchAll(headerRegex)];
+    const headerMatches = Array.from(cleanText.matchAll(headerRegex));
 
     if (headerMatches.length === 0) {
       return null;
