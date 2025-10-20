@@ -1,84 +1,74 @@
-import ArticlePreview from "@/components/ArticlePreview";
-import styles from "./search.module.css";
-import { Article } from "@/types"; // Import the Article type
+"use client";
 
-// This is a placeholder function. In a real app, this would fetch data.
-async function getSearchResults(query: string | undefined): Promise<Article[]> {
-  // Ideally, get data from API/database based on search query
-  const dummyArticles: Article[] = [
-    { 
-      id: '1',
-      headline: 'Local Council Approves New Park Development',
-      content: 'Full content about the park approval...',
-      excerpt: 'The city council voted yesterday to allocate funds for a new recreational park in the downtown area...',
-      category: 'Local',
-      author_id: 'user1',
-      status: 'published',
-      created_at: '2025-05-05T14:00:00Z',
-      last_updated: '2025-05-05T14:00:00Z',
-      slug: 'local-council-approves-park',
-      author_name: 'Demo Reporter',
-      author_avatar_url: '',
-      sources: [],                // FIX: must be an array, not null
-      analysis_result: null,      // placeholder to satisfy type
-      trust_score: null,
-      image_url: null
-    },
-    { 
-      id: '2',
-      headline: 'Tech Startup Announces Breakthrough in Battery Technology',
-      content: 'Details about the new battery technology...',
-      excerpt: 'Innovatech claims their new solid-state battery offers double the lifespan...',
-      category: 'Technology',
-      author_id: 'user2',
-      status: 'published',
-      created_at: '2025-05-05T11:00:00Z',
-      last_updated: '2025-05-05T11:00:00Z',
-      slug: 'tech-startup-battery-breakthrough',
-      author_name: 'Tech Correspondent',
-      author_avatar_url: '',
-      sources: [],                // FIX: must be an array, not null
-      analysis_result: null,
-      trust_score: null,
-      image_url: null
-    }
-  ];
+import { useEffect, useState } from 'react';
+import { createBrowserClient } from '@supabase/ssr';
+import Link from 'next/link';
+import { Article } from '@/types';
+import styles from './profile.module.css';
+import ArticlePreview from '@/components/ArticlePreview';
 
-  if (!query) {
-    return []; // Return no results if there's no query
-  }
+export default function ProfilePage() {
+  const [user, setUser] = useState<any>(null);
+  const [submittedArticles, setSubmittedArticles] = useState<Article[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Simple filtering for demonstration
-  return dummyArticles.filter(
-    article => article.headline.toLowerCase().includes(query.toLowerCase())
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
-}
 
-// Define the props for the SearchPage component
-type SearchPageProps = {
-  searchParams: {
-    q?: string;
-  };
-};
+  useEffect(() => {
+    const fetchUserDataAndArticles = async () => {
+      setLoading(true);
+      setError(null);
 
-export default async function SearchPage({ searchParams }: SearchPageProps) {
-  const query = searchParams.q;
-  const articles = await getSearchResults(query);
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      setUser(currentUser);
+
+      if (currentUser) {
+        try {
+          const response = await fetch(`/api/users/${currentUser.id}/articles`);
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error || `Failed to fetch articles: ${response.statusText}`);
+          }
+          const articles: Article[] = await response.json();
+          setSubmittedArticles(articles);
+        } catch (err: any) {
+          console.error("Error fetching user's articles:", err);
+          setError(err.message || "Could not load your articles.");
+        }
+      } else {
+        setError("You are not logged in.");
+      }
+
+      setLoading(false);
+    };
+
+    fetchUserDataAndArticles();
+  }, [supabase]);
+
+  if (loading) return <div className={styles.container}><p>Loading profile...</p></div>;
+  if (error) return <div className={styles.container}><p className={styles.error}>{error}</p></div>;
+  if (!user) return <div className={styles.container}><p>Please log in to view your profile.</p></div>;
 
   return (
     <div className={styles.container}>
-      <h1 className={styles.title}>
-        {query ? `Search Results for "${query}"` : 'Search'}
-      </h1>
-      <div className={styles.resultsContainer}>
-        {articles.length > 0 ? (
-          articles.map((article) => (
-            <ArticlePreview key={article.id} article={article} />
-          ))
+      <h1>Your Profile</h1>
+      <section className={styles.submittedSection}>
+        <h2>Your Submitted Articles</h2>
+        {submittedArticles.length > 0 ? (
+          <div className={styles.articlesGrid}>
+            {submittedArticles.map((article) => {
+              const articleWithOwnerFlag = { ...article, isOwner: true };
+              return <ArticlePreview key={article.id} article={articleWithOwnerFlag} />;
+            })}
+          </div>
         ) : (
-          <p>{query ? 'No articles found.' : 'Please enter a search term to begin.'}</p>
+          <p>You haven't submitted any articles yet.</p>
         )}
-      </div>
+      </section>
     </div>
   );
 }
