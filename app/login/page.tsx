@@ -1,30 +1,26 @@
-"use client"; // Required for form interaction (event handlers, state eventually)
+"use client";
 
 import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link'; // For linking to signup
-import { createBrowserClient } from '@supabase/ssr'; // Use directly from @supabase/ssr
-import styles from './login.module.css'; // We'll create this next
-import { BsEyeFill, BsEyeSlashFill } from 'react-icons/bs'; // Eye icons
-// import { useRouter } from 'next/navigation'; // Needed later for redirect after login
+import Link from 'next/link';
+import { createBrowserClient } from '@supabase/ssr';
+import styles from './login.module.css';
+import { BsEyeFill, BsEyeSlashFill } from 'react-icons/bs';
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState(''); // State for email/username
-  const [password, setPassword] = useState(''); // State for password
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false); // Added loading state
+  const [isLoading, setIsLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
-  const [showPassword, setShowPassword] = useState(false); // State for password visibility
+  const [showPassword, setShowPassword] = useState(false);
 
-  // Initialize Supabase client directly in the component
-  // Ensure NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY are in your .env.local
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
 
-  // Placeholder login handler
   const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError(null);
@@ -54,26 +50,12 @@ export default function LoginPage() {
       }
     } else if (data.user && data.session) {
       console.log('Login successful, user:', data.user);
-      // Session is automatically handled by the Supabase client library (cookies/localStorage)
-      
-      router.push('/'); // Redirect to the homepage
-      router.refresh(); // CRUCIAL: Refresh server components to update auth state (e.g., Header)
+      router.push('/');
+      router.refresh();
     } else {
-      // This case should ideally not be reached if signInError or data.user/session is always populated.
       setError("An unexpected issue occurred. Please try again.");
       console.log("Unexpected login response data:", data);
     }
-  };
-
-  const handleSocialLogin = (provider: 'google' | 'apple' | 'facebook') => {
-    // Placeholder for OAuth functionality
-    console.log(`Attempting to log in with ${provider}`);
-    setError(`Login with ${provider} is not yet implemented.`);
-    // Actual implementation:
-    // await supabase.auth.signInWithOAuth({ 
-    //   provider,
-    //   options: { redirectTo: `${window.location.origin}/auth/callback` } 
-    // });
   };
 
   const togglePasswordVisibility = () => {
@@ -83,11 +65,15 @@ export default function LoginPage() {
   return (
     <div className={styles.authPageContainer}>
       <div className={styles.logoHeader}>
-        <Link href="/">NewsGrid</Link>
+        <Link href="/">
+          <span style={{ color: 'var(--text-primary)' }}>News</span>
+          <span style={{ color: 'var(--accent-primary)' }}>Grid</span>
+        </Link>
       </div>
 
       <div className={styles.formContainer}>
-        <h1 className={styles.title}>Log in to your account</h1>
+        <h1 className={styles.title}>Welcome back</h1>
+        <p className={styles.subtitle}>Log in to your account to continue</p>
         
         <form className={styles.form} onSubmit={handleLogin}>
           <div className={styles.inputGroup}>
@@ -102,6 +88,7 @@ export default function LoginPage() {
               className={styles.input}
               disabled={isLoading}
               placeholder="Enter your email address"
+              autoComplete="email"
             />
           </div>
           
@@ -118,6 +105,7 @@ export default function LoginPage() {
                 className={styles.input}
                 disabled={isLoading}
                 placeholder="Enter password"
+                autoComplete="current-password"
               />
               <button 
                 type="button" 
@@ -146,7 +134,11 @@ export default function LoginPage() {
             </Link>
           </div>
           
-          {error && <p className={styles.error}>{error}</p>}
+          {error && (
+            <div className={styles.error} role="alert">
+              {error}
+            </div>
+          )}
           
           <button type="submit" className={styles.primaryButton} disabled={isLoading}>
             {isLoading ? 'Logging in...' : 'Log in'}
@@ -156,38 +148,6 @@ export default function LoginPage() {
         <p className={styles.secondaryActionText}>
           Don&apos;t have an account? <Link href="/signup" className={styles.inlineLinkBold}>Create one</Link>
         </p>
-
-        <div className={styles.divider}>
-          <span>Or</span>
-        </div>
-
-        <button 
-          type="button" 
-          className={styles.socialButton} 
-          onClick={() => handleSocialLogin('google')}
-          disabled={isLoading}
-        >
-          <span className={styles.iconPlaceholder}>G</span>
-          Continue with Google
-        </button>
-        <button 
-          type="button" 
-          className={styles.socialButton} 
-          onClick={() => handleSocialLogin('facebook')}
-          disabled={isLoading}
-        >
-          <span className={styles.iconPlaceholder}>f</span>
-          Continue with Facebook
-        </button>
-        <button 
-          type="button" 
-          className={styles.socialButton} 
-          onClick={() => handleSocialLogin('apple')}
-          disabled={isLoading}
-        >
-          <span className={styles.iconPlaceholder}></span>
-          Continue with Apple
-        </button>
       </div>
     </div>
   );

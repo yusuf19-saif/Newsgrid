@@ -22,13 +22,22 @@ const toBase64 = (file: File): Promise<string> =>
     reader.onerror = reject;
   });
 
-  const createSlug = (title: string) =>
-    title
-      .toLowerCase()
-      .trim()
-      .replace(/[^a-z0-9\s-]/g, '')
-      .replace(/\s+/g, '-')
-      .replace(/-+/g, '-');
+const createSlug = (title: string) =>
+  title
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-');
+
+// Get credibility rating label and color based on score
+const getCredibilityRating = (score: number): { label: string; color: string; bgColor: string } => {
+  if (score >= 85) return { label: 'Highly Credible', color: '#059669', bgColor: 'rgba(5, 150, 105, 0.1)' };
+  if (score >= 70) return { label: 'Credible', color: '#10b981', bgColor: 'rgba(16, 185, 129, 0.1)' };
+  if (score >= 55) return { label: 'Mixed', color: '#f59e0b', bgColor: 'rgba(245, 158, 11, 0.1)' };
+  if (score >= 40) return { label: 'Low Credibility', color: '#f97316', bgColor: 'rgba(249, 115, 22, 0.1)' };
+  return { label: 'Unreliable', color: '#ef4444', bgColor: 'rgba(239, 68, 68, 0.1)' };
+};
 
 const SubmitArticleClient = ({ categories }: SubmitArticleClientProps) => {
   const router = useRouter();
@@ -138,6 +147,24 @@ const SubmitArticleClient = ({ categories }: SubmitArticleClientProps) => {
       imageUrlToSave = publicData.publicUrl;
     }
 
+    // Parse verification result to extract scores for saving
+    const parsedVerification = verificationResult ? parseAiResponse(verificationResult) : null;
+    const calculatedScore = parsedVerification?.calculatedScore ?? null;
+    const rating = calculatedScore !== null ? getCredibilityRating(calculatedScore) : null;
+
+    // Build verification report object to save
+    const verificationReport = parsedVerification ? {
+      overallSummary: parsedVerification.overallSummary,
+      claimByClaim: parsedVerification.claimByClaim,
+      missingEvidence: parsedVerification.missingEvidence,
+      sourceQuality: parsedVerification.sourceQuality,
+      trustScoreBreakdown: parsedVerification.trustScoreBreakdown,
+      suggestions: parsedVerification.suggestions,
+      references: parsedVerification.references,
+      individualScores: parsedVerification.individualScores,
+      whyThisScore: parsedVerification.whyThisScore,
+    } : null;
+
     const { data: insertedArticle, error: insertError } = await supabase
       .from('articles')
       .insert({
@@ -151,6 +178,9 @@ const SubmitArticleClient = ({ categories }: SubmitArticleClientProps) => {
         image_url: imageUrlToSave,
         last_updated: new Date().toISOString(),
         slug: baseSlug,
+        trust_score: calculatedScore,
+        verification_report: verificationReport,
+        credibility_rating: rating?.label ?? null,
       })
       .select()
       .single();
@@ -195,17 +225,21 @@ const SubmitArticleClient = ({ categories }: SubmitArticleClientProps) => {
     const cleanText = text.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
     
     const sections: { [key: string]: string } = {};
+    
+    // Updated headers to match new template
     const headers = [
       'Overall Summary',
-      'Claim-by-Claim Support',
-      'Missing Evidence or Unverified Claims',
+      'Claim-by-Claim Analysis',
+      'Claim-by-Claim Support', // Keep old header for backwards compatibility
+      'Missing Evidence',
+      'Missing Evidence or Unverified Claims', // Old header
       'Source Quality Assessment',
-      'Fact-Check Confidence Score',
+      'TrustScore Breakdown',
+      'Fact-Check Confidence Score', // Old header
       'Suggested Improvements',
       'References',
     ];
 
-    // Find all the headers that are present in the text
     const headerRegex = new RegExp(`###?\\s*(?:\\d+\\.\\s*)?(${headers.join('|')})`, 'gi');
     const headerMatches = Array.from(cleanText.matchAll(headerRegex));
 
@@ -218,28 +252,89 @@ const SubmitArticleClient = ({ categories }: SubmitArticleClientProps) => {
       const startIndex = match.index! + match[0].length;
       const nextMatch = headerMatches[index + 1];
       const endIndex = nextMatch ? nextMatch.index! : cleanText.length;
-      const content = cleanText.substring(startIndex, endIndex).trim();
+      const sectionContent = cleanText.substring(startIndex, endIndex).trim();
       
-      const officialHeader = headers.find(h => h.toLowerCase() === headerText.toLowerCase());
-      if (officialHeader) {
-        sections[officialHeader] = content;
+      // Normalize header names
+      let normalizedHeader = headerText;
+      if (headerText.toLowerCase().includes('claim-by-claim')) {
+        normalizedHeader = 'Claim-by-Claim Analysis';
+      } else if (headerText.toLowerCase().includes('missing evidence')) {
+        normalizedHeader = 'Missing Evidence';
+      } else if (headerText.toLowerCase().includes('trustscore') || headerText.toLowerCase().includes('confidence score')) {
+        normalizedHeader = 'TrustScore Breakdown';
+      }
+      
+      sections[normalizedHeader] = sectionContent;
+    });
+
+    // Parse scores from Section 5 (TrustScore Breakdown)
+    const scoreSection = sections['TrustScore Breakdown'] || '';
+    const scores: { [key: string]: number } = {};
+    let overallScore: number | null = null;
+
+    // Match various score formats
+    // "**Factual Accuracy Score: [85/100]**" or "Factual Accuracy Score: [85/100]"
+    const scoreRegex = /\*?\*?([A-Za-z\s\-&]+(?:Score|Modifier))[\*\s]*:\s*\[?([+-]?\d+)(?:\/100)?\]?/gi;
+    const scoreMatches = Array.from(scoreSection.matchAll(scoreRegex));
+
+    scoreMatches.forEach(match => {
+      const label = match[1].trim().replace(/\*+/g, '');
+      const val = parseInt(match[2], 10);
+      
+      if (label.toLowerCase().includes('overall trustscore') || label.toLowerCase() === 'overall trustscore') {
+        overallScore = val;
+      } else {
+        scores[label] = val;
       }
     });
 
+    // Extract "Why This Score" explanation
+    const whyScoreMatch = scoreSection.match(/Why This Score:\s*(.+?)(?=\n###|\n\*\*|$)/is);
+    const whyThisScore = whyScoreMatch ? whyScoreMatch[1].trim() : '';
+
+    // Calculate score using new formula if not provided: (Accuracy × 0.45) + (Coverage × 0.25) + (Quality × 0.15) + (Alignment × 0.10) + Context
+    if (overallScore === null && Object.keys(scores).length > 0) {
+      const getScore = (namePart: string, defaultVal: number = 50) => {
+        const key = Object.keys(scores).find(k => k.toLowerCase().includes(namePart.toLowerCase()));
+        return key ? scores[key] : defaultVal;
+      };
+
+      const accuracy = getScore('Accuracy', 50);
+      const coverage = getScore('Coverage', 50);
+      const quality = getScore('Quality', 50);
+      const alignment = getScore('Alignment', 50);
+      const contextMod = getScore('Context', 0); // Context modifier can be negative
+
+      overallScore = Math.round(
+        (accuracy * 0.45) + 
+        (coverage * 0.25) + 
+        (quality * 0.15) + 
+        (alignment * 0.10) +
+        contextMod
+      );
+      
+      // Clamp between 0 and 100
+      overallScore = Math.max(0, Math.min(100, overallScore));
+    }
+
     return {
       overallSummary: sections['Overall Summary'] || '',
-      claimByClaim: sections['Claim-by-Claim Support'] || '',
-      missingEvidence: sections['Missing Evidence or Unverified Claims'] || '',
+      claimByClaim: sections['Claim-by-Claim Analysis'] || '',
+      missingEvidence: sections['Missing Evidence'] || '',
       sourceQuality: sections['Source Quality Assessment'] || '',
-      confidenceScore: sections['Fact-Check Confidence Score'] || '',
+      trustScoreBreakdown: sections['TrustScore Breakdown'] || '',
       suggestions: sections['Suggested Improvements'] || '',
       references: sections['References'] || '',
+      calculatedScore: overallScore,
+      individualScores: scores,
+      whyThisScore: whyThisScore
     };
   };
 
   const parsed = verificationResult ? parseAiResponse(verificationResult) : null;
-  const score = parsed?.confidenceScore ? parseInt(parsed.confidenceScore.replace('%', ''), 10) : null;
-  const hasContent = parsed && Object.values(parsed).some(section => section.length > 0);
+  const score = parsed?.calculatedScore ?? null;
+  const credibilityRating = score !== null ? getCredibilityRating(score) : null;
+  const hasContent = parsed && (parsed.overallSummary.length > 0 || parsed.claimByClaim.length > 0);
 
   return (
     <div className={styles.submitContainer}>
@@ -314,6 +409,9 @@ const SubmitArticleClient = ({ categories }: SubmitArticleClientProps) => {
 
         <fieldset className={styles.sourcesGroup}>
           <legend className={styles.subheading}>Sources</legend>
+          <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
+            Add URLs or documents that support your article&apos;s claims. More quality sources = higher TrustScore.
+          </p>
 
           <div className={styles.sourcesList}>
             {sources.map((s, i) => (
@@ -337,7 +435,7 @@ const SubmitArticleClient = ({ categories }: SubmitArticleClientProps) => {
               placeholder="Add a URL source"
               value={newSource}
               onChange={(e) => setNewSource(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleAddSource()}
+              onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddSource())}
             />
             <button type="button" className={styles.button} onClick={handleAddSource}>
               Add URL
@@ -370,7 +468,7 @@ const SubmitArticleClient = ({ categories }: SubmitArticleClientProps) => {
       {isAnalyzing && (
         <div className={styles.loadingContainer}>
           <div className={styles.spinner} />
-          <p>Analyzing... this may take a moment.</p>
+          <p>Verifying facts and analyzing sources... this may take a moment.</p>
         </div>
       )}
 
@@ -391,7 +489,7 @@ const SubmitArticleClient = ({ categories }: SubmitArticleClientProps) => {
                 )}
                 {parsed.claimByClaim && (
                   <div className={styles.analysisSection}>
-                    <h4 className={styles.analysisSectionTitle}>2. Claim-by-Claim Support</h4>
+                    <h4 className={styles.analysisSectionTitle}>2. Claim-by-Claim Analysis</h4>
                     <div className={`${styles.analysisSectionContent} ${styles.markdownContent}`}>
                       <ReactMarkdown remarkPlugins={[remarkGfm]}>{parsed.claimByClaim}</ReactMarkdown>
                     </div>
@@ -399,7 +497,7 @@ const SubmitArticleClient = ({ categories }: SubmitArticleClientProps) => {
                 )}
                 {parsed.missingEvidence && (
                   <div className={styles.analysisSection}>
-                    <h4 className={styles.analysisSectionTitle}>3. Missing Evidence or Unverified Claims</h4>
+                    <h4 className={styles.analysisSectionTitle}>3. Missing Evidence</h4>
                     <div className={styles.analysisSectionContent}>
                       <ReactMarkdown remarkPlugins={[remarkGfm]}>{parsed.missingEvidence}</ReactMarkdown>
                     </div>
@@ -410,6 +508,14 @@ const SubmitArticleClient = ({ categories }: SubmitArticleClientProps) => {
                     <h4 className={styles.analysisSectionTitle}>4. Source Quality Assessment</h4>
                     <div className={styles.analysisSectionContent}>
                       <ReactMarkdown remarkPlugins={[remarkGfm]}>{parsed.sourceQuality}</ReactMarkdown>
+                    </div>
+                  </div>
+                )}
+                {parsed.trustScoreBreakdown && (
+                  <div className={styles.analysisSection}>
+                    <h4 className={styles.analysisSectionTitle}>5. TrustScore Breakdown</h4>
+                    <div className={`${styles.analysisSectionContent} ${styles.markdownContent}`}>
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{parsed.trustScoreBreakdown}</ReactMarkdown>
                     </div>
                   </div>
                 )}
@@ -433,7 +539,53 @@ const SubmitArticleClient = ({ categories }: SubmitArticleClientProps) => {
               <aside className={styles.trustScoreContainer}>
                 {score !== null && (
                   <div className={styles.trustScoreDisplay}>
-                    <TrustScoreMeter score={score} />
+                    <TrustScoreMeter score={score} size="large" />
+                    
+                    {credibilityRating && (
+                      <div 
+                        className={styles.credibilityBadge}
+                        style={{ 
+                          color: credibilityRating.color, 
+                          backgroundColor: credibilityRating.bgColor,
+                          border: `1px solid ${credibilityRating.color}`,
+                        }}
+                      >
+                        {credibilityRating.label}
+                      </div>
+                    )}
+
+                    {/* Score Breakdown */}
+                    {parsed?.individualScores && Object.keys(parsed.individualScores).length > 0 && (
+                      <div className={styles.scoreBreakdownMini}>
+                        <h5>Score Breakdown</h5>
+                        {Object.entries(parsed.individualScores).map(([label, value]) => (
+                          <div key={label} className={styles.scoreItem}>
+                            <span className={styles.scoreItemLabel}>
+                              {label.replace(/\s*Score\s*$/i, '')}
+                            </span>
+                            <span className={styles.scoreItemValue}>
+                              {label.toLowerCase().includes('modifier') ? (
+                                value >= 0 ? `+${value}` : value
+                              ) : (
+                                `${value}/100`
+                              )}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Why This Score */}
+                    {parsed?.whyThisScore && (
+                      <div className={styles.whyThisScore}>
+                        <strong>Why This Score</strong>
+                        {parsed.whyThisScore}
+                      </div>
+                    )}
+
+                    <p className={styles.scoreExplanation}>
+                      Based on factual accuracy, source quality, and citation coverage.
+                    </p>
                   </div>
                 )}
               </aside>

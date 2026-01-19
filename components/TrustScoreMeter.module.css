@@ -1,51 +1,43 @@
 .meterContainer {
-  display: grid;
-  place-items: center;
-  width: 120px;
-  /* Let height be determined by content + gap */
-  gap: 0.5rem; /* Space between the meter and the label */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
 }
 
 .meterSvg {
-  /* SVG and Score text will be in the same grid cell */
-  grid-row: 1 / 2;
-  grid-column: 1 / 2;
-  transform: rotate(-90deg); /* Start from the top */
+  display: block;
 }
 
 .progressCircle {
-  transition: stroke-dashoffset 0.5s ease-out;
+  transition: stroke-dashoffset 1.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .scoreText {
-  /* SVG and Score text will be in the same grid cell */
-  grid-row: 1 / 2;
-  grid-column: 1 / 2;
   display: flex;
-  align-items: center; /* Vertically center */
-  justify-content: center; /* Horizontally center */
+  align-items: center;
+  justify-content: center;
   color: var(--text-primary);
   line-height: 1;
 }
 
 .scoreText strong {
-  font-size: 1.6rem; /* Further reduced size */
+  font-size: 1.5rem;
   font-weight: 700;
 }
 
 .scoreText span {
-  font-size: 0.7rem; /* Further reduced size */
+  font-size: 0.7rem;
   font-weight: 500;
   color: var(--text-secondary);
   margin-left: 2px;
-  padding-bottom: 4px; /* Adjusted for new font size */
 }
 
 .label {
-  /* This will be in the second row of the grid */
-  grid-row: 2 / 3;
   font-weight: 600;
-  font-size: 1rem;
+  font-size: 0.9rem;
   color: var(--text-secondary);
   text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }

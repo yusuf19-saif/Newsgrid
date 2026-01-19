@@ -1,16 +1,17 @@
-import Link from 'next/link'; // Keep Link if you want category links etc.
-import { notFound } from 'next/navigation'; // Import notFound for 404 handling
-import { Article } from '../../../types'; // Adjusted path to use relative path
+import Link from 'next/link';
+import { notFound } from 'next/navigation';
+import type { Metadata } from 'next';
 import styles from './article.module.css';
 import { createSupabaseServerComponentClient } from '@/lib/supabaseServerComponentClient';
-import { TrustScoreMeter } from '@/components/TrustScoreMeter'; // Corrected: Use named import
+import { TrustScoreMeter } from '@/components/TrustScoreMeter';
+import { TrustScoreBreakdown } from '@/components/TrustScoreBreakdown';
 
-// Helper function to format date (can be shared in a utils file later)
+// Helper function to format date
 function formatDate(dateString: string | undefined): string {
     if (!dateString) return 'Unknown date';
     try {
         return new Date(dateString).toLocaleDateString('en-US', {
-            year: 'numeric', month: 'short', day: 'numeric'
+            year: 'numeric', month: 'long', day: 'numeric'
         });
     } catch (e) {
         console.error("Error formatting date:", e);
@@ -18,22 +19,74 @@ function formatDate(dateString: string | undefined): string {
     }
 }
 
-// Define the expected shape of the params object
+// Helper to sanitize text content - removes HTML tags and escapes special characters
+function sanitizeTextContent(content: string): string {
+  if (!content) return '';
+  // Remove any HTML tags
+  return content
+    .replace(/<[^>]*>/g, '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
 interface ArticlePageParams {
   slug: string;
 }
 
-// The component receives params containing the dynamic route segments
-// Make the Page component async to use await for data fetching
+// Dynamic metadata generation for SEO
+export async function generateMetadata({ params }: { params: Promise<ArticlePageParams> }): Promise<Metadata> {
+  const { slug } = await params;
+  const supabase = createSupabaseServerComponentClient();
+  
+  const { data: article } = await supabase
+    .from('articles')
+    .select('headline, excerpt, content, image_url, category')
+    .eq('slug', slug)
+    .eq('status', 'Published')
+    .single();
+
+  if (!article) {
+    return { 
+      title: 'Article Not Found | NewsGrid',
+      description: 'The requested article could not be found.'
+    };
+  }
+
+  const description = article.excerpt || article.content?.substring(0, 160) || 'Read this verified article on NewsGrid';
+
+  return {
+    title: `${article.headline} | NewsGrid`,
+    description: description,
+    keywords: [article.category, 'news', 'fact-check', 'NewsGrid'].filter(Boolean),
+    openGraph: {
+      title: article.headline,
+      description: description,
+      type: 'article',
+      siteName: 'NewsGrid',
+      images: article.image_url ? [{ 
+        url: article.image_url,
+        width: 1200,
+        height: 630,
+        alt: article.headline
+      }] : [],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: article.headline,
+      description: description,
+      images: article.image_url ? [article.image_url] : [],
+    },
+  };
+}
+
 export default async function ArticlePage({ params }: { params: Promise<ArticlePageParams> }) {
-  const { slug } = await params; // Extract the slug after awaiting params
+  const { slug } = await params;
   const supabase = await createSupabaseServerComponentClient();
 
-  // Get the current user's session to check if they are the author
   const { data: { session } } = await supabase.auth.getSession();
   const userId = session?.user?.id;
 
-  // Fetch the article by slug, but don't filter by status yet
   const { data: article, error } = await supabase
     .from('articles')
     .select(`
@@ -48,6 +101,9 @@ export default async function ArticlePage({ params }: { params: Promise<ArticleP
       created_at,
       status,
       author_id,
+      image_url,
+      verification_report,
+      credibility_rating,
       profiles (
         full_name
       )
@@ -63,81 +119,87 @@ export default async function ArticlePage({ params }: { params: Promise<ArticleP
   const isPublished = article.status === 'Published';
   const isOwner = article.author_id === userId;
 
-  // If the article is not published and the person viewing it is not the author,
-  // then show a 404 page.
   if (!isPublished && !isOwner) {
     notFound();
   }
   
-  // The join result is now in `article.profiles`. Handle case where it might be null.
-  // Correctly access the author's name from the first element of the profiles array.
   const authorName = Array.isArray(article.profiles) && article.profiles.length > 0
     ? article.profiles[0].full_name
     : 'Anonymous';
   
-  // Map the author data to the expected property
   const articleWithAuthor = {
       ...article,
       author_full_name: authorName,
-      // Make sure profiles is not passed down if you are not using it elsewhere
       profiles: undefined 
   };
 
-  // console.log(`Rendering ArticlePage for slug: ${slug}`); // Add log - keep if helpful
-  // If article IS found, render its content
+  // Sanitize the content for safe rendering
+  const sanitizedContent = sanitizeTextContent(articleWithAuthor.content || '');
+
   return (
     <div className={styles.pageLayout}>
       <div className={styles.mainContent}>
         <article className={styles.articleContent}>
-          {/* Display actual fetched data */}
+          {/* Category Badge */}
+          {articleWithAuthor.category && (
+            <Link 
+              href={`/category/${encodeURIComponent(articleWithAuthor.category.toLowerCase())}`} 
+              className={styles.categoryBadge}
+            >
+              {articleWithAuthor.category}
+            </Link>
+          )}
+
           <h1 className={styles.headline}>{articleWithAuthor.headline}</h1>
 
           <div className={styles.meta}>
-            {/* Display Author Name as a Link if author_id exists */}
             {articleWithAuthor.author_id && articleWithAuthor.author_full_name && articleWithAuthor.author_full_name !== 'Anonymous' ? (
-              <span>
-                By: <Link href={`/profile/${articleWithAuthor.author_id}`} className={styles.authorLink}>{articleWithAuthor.author_full_name}</Link>
+              <span className={styles.metaItem}>
+                By <Link href={`/profile/${articleWithAuthor.author_id}`} className={styles.authorLink}>{articleWithAuthor.author_full_name}</Link>
               </span>
             ) : articleWithAuthor.author_full_name && articleWithAuthor.author_full_name !== 'Anonymous' ? (
-              <span>By: {articleWithAuthor.author_full_name}</span>
-            ) : null} {/* Or a fallback for "Anonymous" if desired */}
-            <span>
-              Category: <Link href={`/category/${encodeURIComponent(articleWithAuthor.category.toLowerCase())}`} className={styles.categoryLink}>{articleWithAuthor.category}</Link>
-            </span>
-            <span>Posted: {formatDate(articleWithAuthor.created_at)}</span>
+              <span className={styles.metaItem}>By {articleWithAuthor.author_full_name}</span>
+            ) : null}
+            <span className={styles.metaItem}>{formatDate(articleWithAuthor.created_at)}</span>
+            {articleWithAuthor.trust_score !== null && (
+              <span className={styles.trustBadge}>
+                {articleWithAuthor.trust_score}% Trust Score
+              </span>
+            )}
           </div>
 
-          {/* Display the full article content */}
-          {/* Warning: Rendering raw HTML from user input is dangerous (XSS).
-              If 'content' could contain HTML, use a sanitizer library (like DOMPurify)
-              or render it as plain text. For now, assuming plain text or trusted content. */}
+          {/* Article Body - safely rendered as plain text paragraphs */}
           <div className={styles.body}>
-            {/* Render content - split into paragraphs if content has line breaks */}
-            {articleWithAuthor.content && articleWithAuthor.content.split('\n').map((paragraph: string, index: number) => (
+            {sanitizedContent.split('\n\n').map((paragraph: string, index: number) => (
               paragraph.trim() ? <p key={index}>{paragraph}</p> : null
             ))}
           </div>
 
-          {/* Updated Sources section */}
+          {/* Sources section */}
           {Array.isArray(articleWithAuthor.sources) && articleWithAuthor.sources.length > 0 && (
             <div className={styles.sourcesSection}>
               <h3 className={styles.sourcesTitle}>Sources</h3>
               <ol className={styles.sourcesList}>
-                {articleWithAuthor.sources.map((source: any, index) => {
+                {articleWithAuthor.sources.map((source: any, index: number) => {
                   if (!source || !source.value) return null;
 
                   if (source.type === 'url') {
                     return (
                       <li key={index}>
-                        <a href={source.value} target="_blank" rel="noopener noreferrer" className={styles.sourceLink}>
-                          {source.value}
+                        <a 
+                          href={source.value} 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          className={styles.sourceLink}
+                        >
+                          {source.name || source.value}
                         </a>
                       </li>
                     );
                   } else if (source.type === 'pdf') {
                     return (
                       <li key={index}>
-                        Uploaded PDF: {source.name || 'PDF Source'}
+                        📄 {source.name || 'PDF Source'}
                       </li>
                     );
                   }
@@ -151,24 +213,13 @@ export default async function ArticlePage({ params }: { params: Promise<ArticleP
 
       <aside className={styles.trustScoreWrapper}>
         {articleWithAuthor.trust_score !== null && typeof articleWithAuthor.trust_score === 'number' && (
-          <div>
-            <h3>Credibility Score</h3>
-            <TrustScoreMeter score={articleWithAuthor.trust_score} />
-          </div>
+          <TrustScoreBreakdown
+            score={articleWithAuthor.trust_score}
+            credibilityRating={article.credibility_rating}
+            verificationReport={article.verification_report as Record<string, unknown> | null}
+          />
         )}
       </aside>
     </div>
   );
 }
-
-// Optional: Generate Metadata dynamically based on the article
-// export async function generateMetadata({ params }: { params: ArticlePageParams }) {
-//   const article = await getArticleBySlug(params.slug);
-//   if (!article) {
-//     return { title: 'Article Not Found' };
-//   }
-//   return {
-//     title: article.headline,
-//     description: article.excerpt || 'Article on NewsGrid',
-//   };
-// }

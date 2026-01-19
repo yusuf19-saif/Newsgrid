@@ -1,18 +1,18 @@
 /** @type {import('next').NextConfig} */
-const CopyWebpackPlugin = require('copy-webpack-plugin');
-const path = require('path');
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+
+const patterns = supabaseUrl
+  ? [
+      {
+        protocol: 'https',
+        hostname: new URL(supabaseUrl).hostname,
+        pathname: '/storage/v1/object/public/article-images/**',
+      },
+    ]
+  : [];
 
 const nextConfig = {
-    images: {
-        remotePatterns: [
-            {
-                protocol: 'https',
-                // This will be in the format of 'your-project-id.supabase.co'
-                // We extract the hostname from the full URL environment variable.
-                hostname: new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).hostname,
-            },
-        ],
-    },
+  images: { remotePatterns: patterns },
 };
 
 module.exports = nextConfig;

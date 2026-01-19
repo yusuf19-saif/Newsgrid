@@ -6,14 +6,8 @@ import styles from './Sidebar.module.css';
 import { type User } from '@supabase/supabase-js';
 import { handleSignOut } from '@/app/actions/authActions';
 import { 
-  FiUser, 
-  FiFileText, 
-  FiSettings, 
-  FiPlusSquare, 
-  FiShield, 
-  FiLogOut,
-  FiLogIn,
-  FiUserPlus
+  FiUser, FiFileText, FiSettings, FiPlusSquare, FiShield, 
+  FiLogOut, FiLogIn, FiUserPlus, FiHome, FiGrid, FiInfo, FiCheckCircle 
 } from 'react-icons/fi';
 
 type SidebarProps = {
@@ -26,28 +20,46 @@ type SidebarProps = {
 
 export function Sidebar({ user, isAdmin, isOpen, isCollapsed, onClose }: SidebarProps) {
   const pathname = usePathname();
-  const isActive = (path: string) => pathname === path || (path !== '/' && pathname.startsWith(path));
+  const isActive = (path: string) => pathname === path;
+
+  // Moved from Header
+  const mainNavItems = [
+    { href: "/", label: "Home", icon: <FiHome /> },
+    { href: "/categories", label: "Categories", icon: <FiGrid /> },
+    { href: "/trustscore", label: "TrustScore", icon: <FiCheckCircle /> },
+    { href: "/about", label: "About", icon: <FiInfo /> },
+    { href: "/guidelines", label: "Guidelines", icon: <FiFileText /> },
+  ];
 
   const userNavItems = [
-    { href: user ? `/profile/${user.id}` : '/profile', label: 'Profile', icon: <FiUser /> },
-    { href: '/drafts', label: 'Drafts', icon: <FiFileText /> },
+    { href: user ? `/profile/${user.id}` : '/profile', label: 'My Profile', icon: <FiUser /> },
+    { href: '/drafts', label: 'My Drafts', icon: <FiFileText /> },
     { href: '/settings', label: 'Settings', icon: <FiSettings /> },
     { href: '/submit', label: 'Submit Article', icon: <FiPlusSquare /> }
   ];
 
   const adminNavItems = [
-    { href: '/admin', label: 'Admin', icon: <FiShield /> }
-  ];
-
-  const authNavItems = [
-    { href: '/login', label: 'Log In', icon: <FiLogIn /> },
-    { href: '/signup', label: 'Sign Up', icon: <FiUserPlus /> }
+    { href: '/admin', label: 'Admin Dashboard', icon: <FiShield /> }
   ];
 
   return (
     <aside className={`${styles.sidebar} ${isOpen ? styles.open : ''} ${isCollapsed ? styles.collapsed : ''}`}>
       <nav className={styles.nav}>
-        {/* User-Specific Navigation */}
+        
+        {/* SECTION 1: MAIN NAVIGATION (Moved from Header) */}
+        <ul className={styles.navList}>
+            <li className={styles.navSectionTitle}>Explore</li>
+            {mainNavItems.map(item => (
+              <li key={item.href}>
+                <Link href={item.href} className={`${styles.navLink} ${isActive(item.href) ? styles.active : ''}`} onClick={onClose}>
+                  <span className={styles.navIcon}>{item.icon}</span>
+                  <span className={styles.navLabel}>{item.label}</span>
+                </Link>
+              </li>
+            ))}
+        </ul>
+
+        {/* SECTION 2: USER ACCOUNT */}
         {user && (
           <ul className={styles.navList}>
             <li className={styles.navSectionTitle}>My Account</li>
@@ -59,7 +71,6 @@ export function Sidebar({ user, isAdmin, isOpen, isCollapsed, onClose }: Sidebar
                 </Link>
               </li>
             ))}
-
             {isAdmin && adminNavItems.map(item => (
               <li key={item.href}>
                 <Link href={item.href} className={`${styles.navLink} ${isActive(item.href) ? styles.active : ''}`} onClick={onClose}>
@@ -79,19 +90,23 @@ export function Sidebar({ user, isAdmin, isOpen, isCollapsed, onClose }: Sidebar
           </ul>
         )}
 
-        {/* Auth actions if no user */}
+        {/* SECTION 3: AUTH (If not logged in) */}
         {!user && (
-             <ul className={styles.navList}>
-                <li className={styles.navSectionTitle}>Account</li>
-                {authNavItems.map(item => (
-                  <li key={item.href}>
-                    <Link href={item.href} className={`${styles.navLink} ${isActive(item.href) ? styles.active : ''}`} onClick={onClose}>
-                      <span className={styles.navIcon}>{item.icon}</span>
-                      <span className={styles.navLabel}>{item.label}</span>
-                    </Link>
-                  </li>
-                ))}
-            </ul>
+           <ul className={styles.navList}>
+              <li className={styles.navSectionTitle}>Join NewsGrid</li>
+              <li key="login">
+                <Link href="/login" className={styles.navLink} onClick={onClose}>
+                  <span className={styles.navIcon}><FiLogIn /></span>
+                  <span className={styles.navLabel}>Log In</span>
+                </Link>
+              </li>
+              <li key="signup">
+                <Link href="/signup" className={styles.navLink} onClick={onClose}>
+                  <span className={styles.navIcon}><FiUserPlus /></span>
+                  <span className={styles.navLabel}>Sign Up</span>
+                </Link>
+              </li>
+           </ul>
         )}
       </nav>
     </aside>

@@ -1,49 +1,45 @@
 .sidebar {
   background-color: var(--background-secondary);
   border-right: 1px solid var(--border-primary);
-  width: 250px; /* Fixed width for the sidebar */
-  flex-shrink: 0; /* Prevent sidebar from shrinking */
-  padding: 1.5rem;
-  transition: transform 0.3s ease-in-out, width 0.3s ease-in-out;
+  width: 240px; /* Reduced from 280px */
+  height: 100vh;
+  flex-shrink: 0;
+  padding: 2rem 1.25rem; /* Slightly reduced horizontal padding */
+  position: sticky;
+  top: 0;
   z-index: 1020;
-}
-
-.sidebar.collapsed {
-  width: 80px;
-}
-.sidebar.collapsed .navSectionTitle {
-  opacity: 0;
-  height: 0;
-  overflow: hidden;
-  margin: 0;
-  padding: 0;
-  transition: opacity 0.2s ease, height 0.3s ease, margin 0.3s, padding 0.3s;
-}
-.sidebar.collapsed .navLink,
-.sidebar.collapsed .signOutButton {
-  justify-content: center;
-}
-.sidebar.collapsed .navLabel { /* Hide text label */
-  opacity: 0;
-  width: 0;
-  overflow: hidden;
+  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1), 
+              opacity 0.3s ease,
+              padding 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+              transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.02);
+  overflow-x: hidden;
+  overflow-y: auto;
   white-space: nowrap;
 }
 
-.sidebarHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-bottom: 1rem;
-  margin-bottom: 1rem;
-  border-bottom: 1px solid var(--border-secondary);
-  font-weight: bold;
+/* --- Collapsed State (Desktop) --- */
+/* This ensures the sidebar disappears COMPLETELY on desktop when toggled */
+.sidebar.collapsed {
+  width: 0;
+  padding: 0;
+  border: none;
+  opacity: 0;
+  pointer-events: none; /* Prevents clicking hidden items */
 }
 
 .nav {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem; /* Space between nav sections */
+  gap: 2rem;
+  opacity: 1;
+  transition: opacity 0.2s ease;
+}
+
+/* Hide content immediately when collapsing to prevent layout jank */
+.sidebar.collapsed .nav {
+  opacity: 0;
+  pointer-events: none;
 }
 
 .navList {
@@ -52,98 +48,91 @@
   margin: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem; /* Space between items in a list */
+  gap: 0.5rem;
 }
 
 .navSectionTitle {
-    font-size: 0.8rem;
-    font-weight: bold;
-    color: var(--text-tertiary);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    padding: 0 0.5rem;
-    margin-bottom: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 0 0.75rem; /* Adjusted padding */
+  margin-bottom: 0.75rem;
+  opacity: 0.8;
 }
 
-.navLink {
+.navLink, .signOutButton {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 0.75rem; /* Reduced padding for tighter feel */
   color: var(--text-secondary);
   text-decoration: none;
-  display: block;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  transition: background-color 0.2s ease, color 0.2s ease;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  background: transparent;
+  width: 100%;
+  border: none;
+  font-family: inherit;
+  font-size: 0.9rem; /* Slightly smaller font */
+  text-align: left;
 }
 
-.navLink:hover {
+.navLink:hover, .signOutButton:hover {
   background-color: var(--background-hover);
   color: var(--text-primary);
+  transform: translateX(4px);
 }
 
 .navLink.active {
   background-color: var(--background-accent);
   color: var(--text-primary);
-  font-weight: bold;
-}
-
-.navLink span:last-child, .signOutButton span:last-child {
-  transition: opacity 0.2s ease, width 0.3s ease;
-}
-
-.navLabel {
-  transition: opacity 0.2s ease, width 0.2s ease;
-  white-space: nowrap; /* Prevent wrapping during transition */
+  font-weight: 600;
 }
 
 .navIcon {
   display: inline-flex;
   align-items: center;
-  margin-right: 0.75rem; /* Space between icon and text */
+  justify-content: center;
+  font-size: 1.15rem; /* Slightly smaller icon */
+  margin-right: 0.75rem; /* Reduced margin */
+  color: inherit;
+  opacity: 0.9;
+}
+
+.navLabel {
+  font-weight: inherit;
 }
 
 .signOutForm {
-    margin: 0;
-    padding: 0;
+  margin: 0;
+  padding: 0;
+  width: 100%;
 }
-
-.signOutButton {
-    /* Inherit styling from navLink for consistency */
-    width: 100%;
-    text-align: left;
-    background: none;
-    border: none;
-    cursor: pointer;
-    color: var(--text-secondary);
-    text-decoration: none;
-    display: block;
-    padding: 0.5rem 1rem;
-    border-radius: 4px;
-    transition: background-color 0.2s ease, color 0.2s ease;
-    font-size: inherit; /* Ensure font size matches links */
-    font-family: inherit;
-}
-.signOutButton:hover {
-    background-color: var(--background-hover);
-    color: var(--text-primary);
-}
-
 
 /* --- Mobile & Tablet Styles --- */
 @media (max-width: 1024px) {
   .sidebar {
-    position: fixed; /* Take it out of the document flow */
+    position: fixed;
     top: 0;
     left: 0;
     bottom: 0;
-    height: 100vh;
-    transform: translateX(-100%); /* Hide it off-screen by default */
-    border-right: 1px solid var(--border-primary); /* Keep border */
+    width: 250px; /* Mobile can stay a bit wider for touch targets, or match desktop 240px */
+    transform: translateX(-100%);
+    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    border-right: 1px solid var(--border-primary);
+    box-shadow: 4px 0 12px rgba(0,0,0,0.1);
   }
 
-  /*
-    FIX: Changed selector from `.sidebar.open` to just `.open`
-    This correctly targets the class name added by the component when `isOpen` is true.
-  */
   .open {
-    transform: translateX(0); /* Slide it in when open */
+    transform: translateX(0);
+  }
+
+  .sidebar.collapsed {
+    width: 250px; /* Match mobile width */
+    padding: 2rem 1.25rem;
+    opacity: 1;
+    pointer-events: auto;
   }
 }

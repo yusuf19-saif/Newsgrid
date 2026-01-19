@@ -1,58 +1,179 @@
 .container {
-  max-width: 900px; /* Slightly narrower for article readability */
-  margin: 3rem auto; /* INCREASED top/bottom margin */
-  padding: 0 1rem;
+  width: 100%;
+  max-width: 100%;
 }
 
-.hero {
-  text-align: center;
-  margin-bottom: 3rem;
-  padding: 2rem 1rem;
-  background-color: var(--background-secondary); /* THEME UPDATE */
-  border: 1px solid var(--border-primary);      /* THEME UPDATE: Added border for dark mode */
-  border-radius: var(--border-radius-large, 12px); /* THEME UPDATE */
-  transition: background-color 0.3s ease, border-color 0.3s ease; /* THEME UPDATE */
+.headerSection {
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border-primary);
 }
 
-.headline {
-  font-size: 2.5rem;
-  font-weight: 600;
-  margin-bottom: 0.5rem;
-  color: var(--text-primary); /* THEME UPDATE */
-  transition: color 0.3s ease;
+.pageTitle {
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: var(--text-primary);
 }
 
-.description {
-  font-size: 1.1rem;
-  color: var(--text-secondary); /* THEME UPDATE */
-  line-height: 1.6;
-  max-width: 650px;
-  margin: 0 auto 1.5rem auto; /* Center description text */
-  transition: color 0.3s ease;
+.tagline {
+  color: var(--text-secondary);
+  font-size: 1rem;
+  margin-top: 0.25rem;
 }
 
-.feedTitle {
-  font-size: 1.8rem;
-  font-weight: 500;
-  margin-bottom: 1.5rem;
-  border-bottom: 2px solid var(--border-primary); /* THEME UPDATE */
-  padding-bottom: 0.5rem;
-  color: var(--text-primary); /* THEME UPDATE: Added color */
-  transition: color 0.3s ease, border-color 0.3s ease;
+.highlight { color: var(--accent-primary); }
+
+/* --- BENTO GRID --- */
+.bentoGrid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  grid-auto-rows: minmax(260px, auto);
+  gap: 1.5rem;
 }
 
-.articleList {
-  /* No list-specific styles needed if previews handle their own margin */
+/* Hero Item */
+.heroItem {
+  grid-column: span 12;
+  grid-row: span 2;
+  position: relative;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: var(--shadow-lg, 0 10px 30px -5px rgba(0,0,0,0.2));
+  background: var(--background-secondary);
 }
 
-.noArticlesMessage {
-  font-size: 1.1rem;
-  color: var(--text-secondary); /* THEME UPDATE */
-  text-align: center;
-  padding: 3rem 1rem;
-  background-color: var(--background-secondary); /* THEME UPDATE */
-  border: 1px solid var(--border-primary);       /* THEME UPDATE */
-  border-radius: var(--border-radius-medium, 8px); /* THEME UPDATE */
-  margin-top: 1rem;
-  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+@media (min-width: 1024px) {
+  .heroItem { grid-column: span 8; }
 }
+
+/* Trending Stack */
+.trendingStack {
+  grid-column: span 12;
+  grid-row: span 2;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+@media (min-width: 1024px) {
+  .trendingStack { grid-column: span 4; }
+}
+
+.trendingCard {
+  flex: 1;
+  background-color: var(--background-secondary);
+  border-radius: 14px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  border: 1px solid var(--border-primary);
+  transition: all 0.2s ease;
+}
+
+.trendingCard:hover {
+  transform: translateY(-3px);
+  background-color: var(--background-accent);
+  border-color: var(--accent-primary);
+}
+
+/* Article Card */
+.articleCard {
+  grid-column: span 12;
+  grid-row: span 1;
+  background-color: var(--background-secondary);
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid var(--border-primary);
+  display: flex;
+  flex-direction: column;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.articleCard:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--shadow-lg, 0 10px 20px -5px rgba(0,0,0,0.2));
+  border-color: var(--accent-primary);
+}
+
+@media (min-width: 768px) { .articleCard { grid-column: span 6; } }
+@media (min-width: 1280px) { .articleCard { grid-column: span 4; } }
+
+/* Large Card Variation */
+.largeCard {
+  grid-column: span 12;
+  grid-row: span 2;
+}
+@media (min-width: 1280px) { .largeCard { grid-column: span 6; } }
+
+/* Trust Score Badge */
+.trustScoreBadge {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--background-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 0.85rem;
+  color: var(--accent-primary);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  border: 2px solid var(--border-primary);
+  z-index: 10;
+}
+
+/* Trust Score Ring */
+.trustScoreRing {
+  position: absolute;
+  inset: -2px;
+  border-radius: 50%;
+  mask: radial-gradient(farthest-side, transparent calc(100% - 3px), white calc(100% - 3px));
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3px), white calc(100% - 3px));
+}
+
+/* --- ANIMATIONS --- */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animateHero {
+  animation: scaleIn 0.5s ease-out forwards;
+}
+
+.animateTrending {
+  animation: fadeInUp 0.5s ease-out forwards;
+}
+
+.animateCard {
+  animation: fadeInUp 0.5s ease-out forwards;
+}
+
+/* Stagger delays */
+.stagger1 { animation-delay: 0.1s; opacity: 0; }
+.stagger2 { animation-delay: 0.15s; opacity: 0; }
+.stagger3 { animation-delay: 0.2s; opacity: 0; }
+.stagger4 { animation-delay: 0.25s; opacity: 0; }
+.stagger5 { animation-delay: 0.3s; opacity: 0; }
+.stagger6 { animation-delay: 0.35s; opacity: 0; }

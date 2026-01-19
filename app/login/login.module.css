@@ -36,11 +36,18 @@
 }
 
 .title {
-  font-size: 1.75rem; /* Or your preferred title size */
-  font-weight: 600; /* Or 700 */
-  color: var(--text-heading);
-  margin-bottom: 2rem; /* Space below title */
-  text-align: center; /* Center title like ground.news */
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+  text-align: center;
+}
+
+.subtitle {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  text-align: center;
+  margin-bottom: 2rem;
 }
 
 .form {

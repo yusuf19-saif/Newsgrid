@@ -1,66 +1,39 @@
-/* This is the overall viewport-sized, non-scrolling container */
+/* app/layout.module.css */
+
+/* 
+  We are moving away from fixed 100vh containers to allow natural scrolling 
+  with the new Tailwind-based layout in AppWrapper.tsx.
+*/
+
 .appContainer {
+  /* No restrictive styles here anymore. */
   display: flex;
-  flex-direction: column;
-  height: 100vh;
-  overflow: hidden; /* Prevent body from scrolling */
-  transition: padding-left 0.3s ease-in-out;
+  min-height: 100vh;
+  flex-direction: row; /* Icon Sidebar is on left */
 }
 
-/* This contains the sidebar and the main content area, side-by-side */
-.mainContentWrapper {
-  display: flex;
-  flex: 1; /* This is crucial for filling vertical space */
-  flex-direction: row;
-  overflow: hidden; /* This container itself should not scroll */
-  position: relative; /* For the overlay positioning */
-}
+/* We don't strictly need these anymore if AppWrapper uses Tailwind classes, 
+   but keeping them for any legacy usage or overlay logic. */
 
-/* This is the main area for page content that WILL scroll */
-.pageContent {
-  flex: 1;
-  overflow-y: auto; /* Allow this main area to scroll */
-  display: flex;
-  flex-direction: column; /* To make footer stick at the bottom */
-  background-color: var(--background-primary);
-  /* The transition on margin-left has been removed to prevent conflicts. */
-}
-
-/* --- NEW: A wrapper for the page's children to make it grow --- */
-.contentArea {
-  flex: 1 0 auto; /* Allow content to grow and shrink but not shrink below its content size */
-  padding: 1.5rem;
+.overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1010;
+  cursor: pointer;
 }
 
 /* 
-  The complex margin-left adjustment for the collapsed state has been removed.
-  The layout will now be handled entirely by flexbox, which is more stable.
+   Legacy classes like .mainContentWrapper and .pageContent 
+   are likely superseded by the direct Tailwind classes in AppWrapper.tsx 
+   but we can leave them empty or minimal to avoid breaking imports.
 */
-
-.sidebarCollapsed .mainContentWrapper {
-  /* No special rules needed here now */
+.mainContentWrapper {
+  display: flex;
+  flex: 1;
+  overflow: hidden; /* This container itself should not scroll */
 }
 
-/* Overlay for mobile sidebar */
-.overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  z-index: 1010; /* Above sidebar, below header if needed, but should be high */
-  display: none; /* Hidden by default */
-}
-
-/* Media query for mobile & tablet */
-@media (max-width: 1024px) {
-  .mainContentWrapper {
-    /* On smaller screens, the flex-direction is managed by the sidebar's absolute positioning */
-  }
-
-  /* When sidebar is open on smaller screens, show overlay */
-  .overlay {
-    display: block;
-  }
+.pageContent {
+  flex: 1;
 }
