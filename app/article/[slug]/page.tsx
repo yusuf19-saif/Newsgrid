@@ -39,14 +39,14 @@ export async function generateMetadata({ params }: { params: Promise<ArticlePage
   const { slug } = await params;
   const supabase = createSupabaseServerComponentClient();
   
-  const { data: article } = await supabase
+  const { data: article, error } = await supabase
     .from('articles')
-    .select('headline, excerpt, content, image_url, category')
+    .select('headline, excerpt, content, category')
     .eq('slug', slug)
     .eq('status', 'Published')
     .single();
 
-  if (!article) {
+  if (error || !article) {
     return { 
       title: 'Article Not Found | NewsGrid',
       description: 'The requested article could not be found.'
@@ -64,18 +64,11 @@ export async function generateMetadata({ params }: { params: Promise<ArticlePage
       description: description,
       type: 'article',
       siteName: 'NewsGrid',
-      images: article.image_url ? [{ 
-        url: article.image_url,
-        width: 1200,
-        height: 630,
-        alt: article.headline
-      }] : [],
     },
     twitter: {
       card: 'summary_large_image',
       title: article.headline,
       description: description,
-      images: article.image_url ? [article.image_url] : [],
     },
   };
 }
