@@ -94,7 +94,6 @@ export default async function ArticlePage({ params }: { params: Promise<ArticleP
       created_at,
       status,
       author_id,
-      image_url,
       verification_report,
       credibility_rating,
       profiles (
