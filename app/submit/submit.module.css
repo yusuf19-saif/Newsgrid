@@ -499,13 +499,15 @@
 
 .resultsWrapper {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: 1fr 320px;
   gap: 2rem;
   align-items: flex-start;
 }
 
 .reportContainer {
   min-width: 0;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
 }
 
 .markdownContent {
@@ -531,11 +533,15 @@
 .trustScoreContainer {
   position: sticky;
   top: 2rem;
+  width: 320px;
+  max-width: 320px;
+  flex-shrink: 0;
   background-color: var(--background-secondary);
   border: 1px solid var(--border-primary);
   border-radius: var(--border-radius-large, 16px);
   padding: 1.5rem;
   box-shadow: var(--shadow-sm);
+  z-index: 10;
 }
 
 .trustScoreDisplay {
@@ -625,10 +631,9 @@
   }
   .trustScoreContainer {
     position: static;
-    margin-top: 2rem;
+    width: 100%;
     max-width: 400px;
-    margin-left: auto;
-    margin-right: auto;
+    margin: 2rem auto 0;
   }
 }
 
