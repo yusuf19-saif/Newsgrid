@@ -289,7 +289,7 @@ const SubmitArticleClient = ({ categories }: SubmitArticleClientProps) => {
     });
 
     // Extract "Why This Score" explanation
-    const whyScoreMatch = scoreSection.match(/Why This Score:\s*(.+?)(?=\n###|\n\*\*|$)/is);
+    const whyScoreMatch = scoreSection.match(/Why This Score:\s*([\s\S]+?)(?=\n###|\n\*\*|$)/i);
     const whyThisScore = whyScoreMatch ? whyScoreMatch[1].trim() : '';
 
     // Calculate score using new formula if not provided: (Accuracy × 0.45) + (Coverage × 0.25) + (Quality × 0.15) + (Alignment × 0.10) + Context
