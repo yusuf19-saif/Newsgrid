@@ -110,7 +110,7 @@ const SubmitArticleClient = ({ categories }: SubmitArticleClientProps) => {
 
   const removeSource = (i: number) => setSources(prev => prev.filter((_, idx) => idx !== i));
 
-  const handleSubmit = async (status: 'draft' | 'pending_review') => {
+  const handleSubmit = async (status: 'draft' | 'Published') => {
     setIsSubmitting(true);
     setError(null);
 
@@ -611,11 +611,11 @@ const SubmitArticleClient = ({ categories }: SubmitArticleClientProps) => {
         </button>
         <button
           type="button"
-          onClick={() => handleSubmit('pending_review')}
+          onClick={() => handleSubmit('Published')}
           disabled={isSubmitting || !headline || !content || !category}
           className={`${styles.button} ${styles.submitButton}`}
         >
-          {isSubmitting ? 'Submitting...' : 'Submit for Review'}
+          {isSubmitting ? 'Publishing...' : 'Publish Article'}
         </button>
       </div>
     </div>
