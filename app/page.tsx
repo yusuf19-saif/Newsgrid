@@ -83,7 +83,7 @@ const ArticleCard = ({ article, className, showImage = true, animationClass = ''
             {article.headline}
           </h3>
           <p className="text-sm line-clamp-2 mb-4" style={{ color: 'var(--text-secondary)' }}>
-             {article.summary || "No summary available."}
+             {article.excerpt || "No summary available."}
           </p>
           
           <div className="mt-auto flex items-center text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
