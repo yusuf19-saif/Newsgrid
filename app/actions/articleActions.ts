@@ -191,9 +191,9 @@ Please verify this article's accuracy and source quality. Generate the full cred
         'Authorization': `Bearer ${perplexityApiKey}`,
       },
       body: JSON.stringify({
-        model: 'sonar-reasoning-pro',
+        model: 'sonar-pro',
         messages: messages,
-        max_tokens: 5000,
+        max_tokens: 4000,
         return_sources: true,
       }),
     });
