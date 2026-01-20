@@ -87,7 +87,7 @@ const ArticleCard = ({ article, className, showImage = true, animationClass = ''
           </p>
           
           <div className="mt-auto flex items-center text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
-             By {article.author_full_name}
+             By {article.author_name}
           </div>
         </div>
       </div>
