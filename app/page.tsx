@@ -4,6 +4,7 @@ import { Article } from '@/types';
 import { createSupabaseServerComponentClient } from '@/lib/supabaseServerComponentClient';
 import styles from './page.module.css';
 import { FiArrowRight, FiActivity } from 'react-icons/fi';
+import { BookmarkButton } from '@/components/BookmarkButton';
 
 // Helper to calculate time ago
 function timeAgo(dateString: string) {
@@ -69,6 +70,10 @@ const ArticleCard = ({ article, className, showImage = true, animationClass = ''
              <div className={styles.trustScoreBadge}>
                <div className={styles.trustScoreRing} style={{ background: gradient }}></div>
                {score}
+             </div>
+             {/* Bookmark Button */}
+             <div className={styles.cardBookmark}>
+               <BookmarkButton articleId={article.id} size="small" />
              </div>
             </div>
         )}

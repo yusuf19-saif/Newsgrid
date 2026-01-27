@@ -7,7 +7,7 @@ import { type User } from '@supabase/supabase-js';
 import { handleSignOut } from '@/app/actions/authActions';
 import { 
   FiUser, FiFileText, FiSettings, FiPlusSquare, FiShield, 
-  FiLogOut, FiLogIn, FiUserPlus, FiHome, FiGrid, FiInfo, FiCheckCircle 
+  FiLogOut, FiLogIn, FiUserPlus, FiHome, FiGrid, FiInfo, FiCheckCircle, FiBookmark 
 } from 'react-icons/fi';
 
 type SidebarProps = {
@@ -33,6 +33,7 @@ export function Sidebar({ user, isAdmin, isOpen, isCollapsed, onClose }: Sidebar
 
   const userNavItems = [
     { href: user ? `/profile/${user.id}` : '/profile', label: 'My Profile', icon: <FiUser /> },
+    { href: '/bookmarks', label: 'Saved Articles', icon: <FiBookmark /> },
     { href: '/drafts', label: 'My Drafts', icon: <FiFileText /> },
     { href: '/settings', label: 'Settings', icon: <FiSettings /> },
     { href: '/submit', label: 'Submit Article', icon: <FiPlusSquare /> }

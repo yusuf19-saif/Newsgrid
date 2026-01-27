@@ -5,6 +5,7 @@ import styles from './article.module.css';
 import { createSupabaseServerComponentClient } from '@/lib/supabaseServerComponentClient';
 import { TrustScoreMeter } from '@/components/TrustScoreMeter';
 import { TrustScoreBreakdown } from '@/components/TrustScoreBreakdown';
+import { BookmarkButton } from '@/components/BookmarkButton';
 
 // Helper function to format date
 function formatDate(dateString: string | undefined): string {
@@ -158,6 +159,11 @@ export default async function ArticlePage({ params }: { params: Promise<ArticleP
                 {articleWithAuthor.trust_score}% Trust Score
               </span>
             )}
+          </div>
+
+          {/* Bookmark Button */}
+          <div className={styles.articleActions}>
+            <BookmarkButton articleId={articleWithAuthor.id} size="large" showLabel />
           </div>
 
           {/* Article Body - safely rendered as plain text paragraphs */}

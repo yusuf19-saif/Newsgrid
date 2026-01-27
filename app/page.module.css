@@ -135,6 +135,20 @@
   -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3px), white calc(100% - 3px));
 }
 
+/* Bookmark Button on Cards */
+.cardBookmark {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  z-index: 10;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.articleCard:hover .cardBookmark {
+  opacity: 1;
+}
+
 /* --- ANIMATIONS --- */
 @keyframes fadeInUp {
   from {
