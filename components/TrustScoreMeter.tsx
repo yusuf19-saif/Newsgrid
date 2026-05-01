@@ -58,23 +58,23 @@ export const TrustScoreMeter = ({ score, size = 'medium' }: TrustScoreMeterProps
     <div className={styles.meterContainer} style={{ width: radius * 2, height: 'auto' }}>
       <div style={{ position: 'relative', width: radius * 2, height: radius * 2 }}>
         <svg
-          height={radius * 2}
-          width={radius * 2}
-          className={styles.meterSvg}
+            height={radius * 2}
+            width={radius * 2}
+            className={styles.meterSvg}
           role="img"
           aria-label={`Trust score: ${score} out of 100`}
         >
           {/* Background circle */}
-          <circle
+            <circle
             stroke="var(--border-primary)"
             fill="transparent"
             strokeWidth={stroke}
             r={normalizedRadius}
             cx={radius}
             cy={radius}
-          />
+            />
           {/* Progress circle */}
-          <circle
+            <circle
             stroke={getScoreColor()}
             fill="transparent"
             strokeWidth={stroke}
@@ -90,7 +90,7 @@ export const TrustScoreMeter = ({ score, size = 'medium' }: TrustScoreMeterProps
             cx={radius}
             cy={radius}
             className={styles.progressCircle}
-          />
+            />
         </svg>
         {/* Score text overlay */}
         <div 

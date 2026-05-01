@@ -98,6 +98,7 @@ export default async function ArticlePage({ params }: { params: Promise<ArticleP
       verification_report,
       credibility_rating,
       profiles (
+        id,
         full_name
       )
     `)
@@ -115,10 +116,29 @@ export default async function ArticlePage({ params }: { params: Promise<ArticleP
   if (!isPublished && !isOwner) {
     notFound();
   }
+
+  // Get author profile info
+  const authorProfile = Array.isArray(article.profiles) && article.profiles.length > 0
+    ? article.profiles[0]
+    : null;
   
-  const authorName = Array.isArray(article.profiles) && article.profiles.length > 0
-    ? article.profiles[0].full_name
-    : 'Anonymous';
+  const authorName = authorProfile?.full_name || 'Anonymous';
+  const authorId = article.author_id;
+
+  // Fetch more articles by the same author (excluding current article)
+  let moreByAuthor: { id: string; headline: string; slug: string; created_at: string; category: string; trust_score: number | null }[] = [];
+  if (authorId) {
+    const { data: moreArticles } = await supabase
+      .from('articles')
+      .select('id, headline, slug, created_at, category, trust_score')
+      .eq('author_id', authorId)
+      .eq('status', 'Published')
+      .neq('id', article.id)
+      .order('created_at', { ascending: false })
+      .limit(3);
+    
+    moreByAuthor = moreArticles || [];
+  }
   
   const articleWithAuthor = {
       ...article,
@@ -205,6 +225,44 @@ export default async function ArticlePage({ params }: { params: Promise<ArticleP
                 })}
               </ol>
             </div>
+          )}
+
+          {/* Author Section */}
+          {authorId && authorName !== 'Anonymous' && (
+            <section className={styles.authorSection}>
+              <h3 className={styles.authorSectionTitle}>About the Author</h3>
+              
+              <Link href={`/profile/${authorId}`} className={styles.authorCard}>
+                <div className={styles.authorAvatar}>
+                  <span className={styles.avatarInitials}>
+                    {authorName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)}
+                  </span>
+                </div>
+                <div className={styles.authorInfo}>
+                  <span className={styles.authorCardName}>{authorName}</span>
+                  <span className={styles.viewProfile}>View full profile →</span>
+                </div>
+              </Link>
+
+              {/* More articles by this author */}
+              {moreByAuthor.length > 0 && (
+                <div className={styles.moreByAuthor}>
+                  <h4 className={styles.moreByAuthorTitle}>More from {authorName.split(' ')[0]}</h4>
+                  <ul className={styles.moreArticlesList}>
+                    {moreByAuthor.map((item) => (
+                      <li key={item.id}>
+                        <Link href={`/article/${item.slug}`} className={styles.moreArticleLink}>
+                          <span className={styles.moreArticleHeadline}>{item.headline}</span>
+                          <span className={styles.moreArticleMeta}>
+                            {item.category}{item.trust_score !== null && ` · ${item.trust_score}% Trust`}
+                          </span>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </section>
           )}
         </article>
       </div>

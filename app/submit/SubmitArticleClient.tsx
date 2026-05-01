@@ -22,13 +22,13 @@ const toBase64 = (file: File): Promise<string> =>
     reader.onerror = reject;
   });
 
-const createSlug = (title: string) =>
-  title
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9\s-]/g, '')
-    .replace(/\s+/g, '-')
-    .replace(/-+/g, '-');
+  const createSlug = (title: string) =>
+    title
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-');
 
 // Get credibility rating label and color based on score
 const getCredibilityRating = (score: number): { label: string; color: string; bgColor: string } => {
@@ -295,9 +295,9 @@ const SubmitArticleClient = ({ categories }: SubmitArticleClientProps) => {
     // Calculate score using new formula if not provided: (Accuracy × 0.45) + (Coverage × 0.25) + (Quality × 0.15) + (Alignment × 0.10) + Context
     if (overallScore === null && Object.keys(scores).length > 0) {
       const getScore = (namePart: string, defaultVal: number = 50) => {
-        const key = Object.keys(scores).find(k => k.toLowerCase().includes(namePart.toLowerCase()));
+         const key = Object.keys(scores).find(k => k.toLowerCase().includes(namePart.toLowerCase()));
         return key ? scores[key] : defaultVal;
-      };
+       };
 
       const accuracy = getScore('Accuracy', 50);
       const coverage = getScore('Coverage', 50);
@@ -305,7 +305,7 @@ const SubmitArticleClient = ({ categories }: SubmitArticleClientProps) => {
       const alignment = getScore('Alignment', 50);
       const contextMod = getScore('Context', 0); // Context modifier can be negative
 
-      overallScore = Math.round(
+       overallScore = Math.round(
         (accuracy * 0.45) + 
         (coverage * 0.25) + 
         (quality * 0.15) + 

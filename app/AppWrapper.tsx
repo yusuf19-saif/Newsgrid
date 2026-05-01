@@ -55,7 +55,7 @@ export default function AppWrapper({ children, user, isAdmin }: AppWrapperProps)
               onToggleCollapse={() => {}} 
             />
 
-            <div className="relative flex flex-1">
+            <div className="relative flex pt-20 md:pt-[84px]">
               
               {/* Off-Canvas Sidebar (Mega Menu) */}
               <Sidebar 
@@ -69,14 +69,14 @@ export default function AppWrapper({ children, user, isAdmin }: AppWrapperProps)
               {/* Overlay for mobile */}
               {isSidebarOpen && (
                 <div 
-                  className="fixed inset-0 bg-black/50 z-[1010] md:hidden"
+                  className="fixed inset-0 bg-black/28 z-[1010]"
                   onClick={() => setSidebarOpen(false)}
                   aria-hidden="true"
                 />
               )}
 
               {/* Page Content */}
-              <main id="main-content" className="flex-1 w-full max-w-[1600px] mx-auto p-4 md:p-8" tabIndex={-1}>
+              <main id="main-content" className="w-full max-w-[1600px] mx-auto p-4 md:p-8" tabIndex={-1}>
                 {children}
               </main>
 

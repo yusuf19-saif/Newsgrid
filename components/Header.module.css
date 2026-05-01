@@ -1,351 +1,255 @@
-/* my-app/components/Header.module.css */
-.header {
-  display: flex;
-  justify-content: space-between; /* This is key */
-  align-items: center; 
-  padding: 1rem 1.5rem; /* Adjusted vertical padding for a better fit */
-  background-color: var(--background-secondary);
-  border-bottom: 1px solid var(--border-primary);
-  /* height property removed */
-  width: 100%;
-  box-sizing: border-box; 
-  position: relative; /* Needed for z-index and positioning of mobile nav */
-  z-index: 1000;
+.headerShell {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1030;
+  background: color-mix(in oklab, var(--background-secondary) 92%, transparent);
+  backdrop-filter: blur(10px);
 }
 
-.sidebarToggleButton {
-  background: transparent;
-  border: none;
-  color: var(--text-secondary);
-  cursor: pointer;
-  font-size: 1.5rem;
-  padding: 0;
+.header {
+  position: relative;
   display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  height: 80px;
+  padding: 0 1.25rem;
+  border-bottom: 1px solid var(--border-primary);
+  background: transparent;
+}
+
+.headerLeft,
+.headerRight {
+  display: flex;
+  align-items: center;
+}
+
+.headerLeft {
+  gap: 0.7rem;
+  min-width: 0;
+}
+
+.headerRight {
+  gap: 0.55rem;
+}
+
+.iconButton {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  padding: 0;
+  border: 1px solid var(--border-primary);
+  border-radius: 10px;
+  background: var(--background-secondary);
+  color: var(--text-primary);
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: color 0.2s ease;
-}
-.sidebarToggleButton:hover {
-  color: var(--text-primary);
+  cursor: pointer;
+  font-size: 1.4rem;
+  line-height: 1;
+  transition: color 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
 }
 
-.headerLeft, .headerRight {
-  display: flex;
-  align-items: center;
-  gap: 1.5rem; /* Spacing between items in the left/right groups */
+.iconButton:hover {
+  color: var(--text-primary);
+  border-color: var(--border-accent);
+  background: var(--background-accent);
+}
+
+.iconButton svg {
+  display: block;
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .logoContainer a {
-  font-size: 1.5rem;
-  font-weight: bold;
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-heading);
+  font-size: 2.15rem;
+  font-weight: 700;
+  line-height: 1;
   text-decoration: none;
+  letter-spacing: -0.02em;
+}
+
+.logoWordNews {
   color: var(--text-primary);
-  transition: color 0.3s ease;
 }
 
-/* Styles for mobile menu button */
-.mobileMenuButton {
-  display: none; /* Hidden on desktop */
-  flex-direction: column;
-  justify-content: space-around;
-  width: 2rem;
-  height: 2rem;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  padding: 0;
-  z-index: 10;
+.logoWordGrid {
+  color: var(--accent-primary);
 }
 
-.mobileMenuButton:focus {
-  outline: none;
-}
-
-.hamburgerIconLine {
-  width: 2rem;
-  height: 0.25rem;
-  background: var(--text-primary);
-  border-radius: 10px;
-  transition: all 0.3s linear;
+.desktopSearchForm {
   position: relative;
-  transform-origin: 1px;
-}
-
-.navLinks { 
-  display: flex;
-  align-items: center;
-}
-
-.navLinks ul { 
-  display: flex; /* Make the UL a flex container */
-  align-items: center;
-  list-style: none;
-  padding: 0;
-  margin: 0 auto; /* << Key for centering the UL */
-  gap: 1.5rem; 
-}
-
-.navLinks li { /* If your nav items are in LIs */
-  /* No specific styles needed here unless you had them */
-}
-
-.navLinks a, /* Target all states of the link */
-.navLinks a:link,
-.navLinks a:visited,
-.navLinks a:hover,
-.navLinks a:active {
-  text-decoration: none !important; /* << FORCE NO DEFAULT UNDERLINE for all states */
-}
-
-.navLinks a { 
-  color: var(--text-secondary);
-  font-weight: 500;
-  padding: 0.25rem 0.5rem; 
-  position: relative; 
-  transition: color 0.3s ease; 
-  /* Ensure no other text-decoration is sneaking in */
-}
-
-.navLinks a:hover {
-  color: var(--link-primary);
-}
-
-/* Animated Underline (ensure this is the one you want) */
-.navLinks a::after {
-  content: '';
-  position: absolute;
-  width: 100%;
-  transform: scaleX(0); 
-  height: 2px; 
-  bottom: -2px; /* Adjust if it's too close or far from the text */
-  left: 0;
-  background-color: var(--link-primary);
-  transform-origin: bottom right; 
-  transition: transform 0.3s ease-out, background-color 0.3s ease;
-}
-
-.navLinks a:hover::after {
-  transform: scaleX(1); 
-  transform-origin: bottom left; 
-}
-
-/* Remove the old .headerRightGroup if it exists */
-.searchContainer {
-  /* No flex needed */
-}
-
-.searchForm { 
-  display: flex;
-  align-items: center; 
+  width: min(340px, 30vw);
+  display: none;
 }
 
 .searchInput {
-  padding: 0.6rem 0.75rem; 
-  border: 1px solid var(--input-border);
-  background-color: var(--input-bg);
+  height: 40px;
+  border-radius: 12px;
+  border: 1px solid var(--border-primary);
+  background: var(--input-bg);
   color: var(--input-text);
-  border-radius: 4px; /* << Apply standard rounding to all corners */
-  /* border-right: none; << REMOVE this if they are not flush */
-  font-size: 0.9rem; 
-  line-height: 1.2; 
-  margin-right: 0.5rem; /* << Add margin if button is separate */
-  transition: border-color 0.3s ease, background-color 0.3s ease, color 0.3s ease;
+  padding: 0 2.8rem 0 0.9rem;
+  font-size: 0.92rem;
 }
+
 .searchInput:focus {
   border-color: var(--input-focus-border);
-  outline: none; /* Remove default browser outline */
-  box-shadow: 0 0 0 0.2rem rgba(var(--input-focus-border-rgb, 13,110,253), 0.25); /* Optional: add a focus shadow, needs --input-focus-border-rgb defined in globals or use a simpler shadow */
+  box-shadow: 0 0 0 3px rgba(var(--input-focus-border-rgb), 0.15);
 }
 
-.searchButton { 
-  padding: 0.6rem 1rem; 
-  background-color: var(--button-primary-bg);
-  color: var(--button-primary-text);
-  border: 1px solid var(--button-primary-bg);
-  border-radius: 4px; /* << Apply standard rounding to ALL corners */
-  cursor: pointer;
-  font-size: 0.9rem; 
-  line-height: 1.2; 
-  white-space: nowrap; 
-  transition: background-color 0.3s ease, border-color 0.3s ease;
-}
-.searchButton:hover {
-  background-color: var(--button-primary-hover-bg);
-  border-color: var(--button-primary-hover-bg);
-}
-
-
-.authSection { 
-  display: flex;
-  align-items: center;
-  gap: 0.75rem; /* Space between email and logout button */
-}
-
-/* We don't need desktopAuth anymore, just use authSection */
-.userEmail {
-  /* No specific margin needed if gap on parent is sufficient */
-  white-space: nowrap; 
-  color: var(--text-secondary);
-  transition: color 0.3s ease;
-}
-
-
-.authSection > form {
-  margin: 0;
-  padding: 0;
-  display: flex; /* This helps if the button inside needs alignment */
-  align-items: center;
-}
-
-/* Ensure links and button themselves don't have unwanted margins that interfere with gap */
-.navLink {
-  text-decoration: none;
-  color: var(--link-primary);
-  font-weight: 500;
-  white-space: nowrap;
-  margin: 0; /* Reset any default margins on these elements themselves */
-  padding: 0; /* Reset padding, rely on parent for spacing or add minimal if needed for click area */
-  transition: color 0.3s ease;
-}
-.navLink:hover {
-  text-decoration: underline;
-  color: var(--link-hover);
-}
-
-
-/* --- Mobile Navigation Styles --- */
-.mobileNav {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  background: var(--background-overlay, rgba(0, 0, 0, 0.9)); /* Semi-transparent background */
-  backdrop-filter: blur(5px);
-  height: 100vh;
-  width: 100vw;
-  text-align: center;
-  position: fixed; /* Full screen overlay */
-  top: 0;
-  left: 0;
-  transition: transform 0.3s ease-in-out;
-  z-index: 5; /* Below the header but above content */
-}
-
-.mobileNav ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.mobileNav li {
-  padding: 1rem 0;
-}
-
-.mobileNav a, .navLinkMobile {
-  font-size: 1.5rem;
-  text-transform: uppercase;
-  font-weight: bold;
-  letter-spacing: 0.2rem;
-  color: var(--text-on-dark-bg, #FFFFFF);
-  text-decoration: none;
-  transition: color 0.3s linear;
-}
-
-.mobileNavHeader {
+.searchSubmitButton {
   position: absolute;
-  top: 1.5rem;
-  right: 1.5rem;
-}
-
-.mobileAuthSection {
-  margin-top: 2rem;
-  display: flex;
-  flex-direction: column;
+  top: 4px;
+  right: 4px;
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  border: none;
+  display: inline-flex;
   align-items: center;
-  gap: 1rem;
-}
-
-.userEmailMobile {
-  color: var(--text-on-dark-bg-secondary, #cccccc);
-  font-size: 1rem;
-  margin-bottom: 1rem;
-}
-
-.signOutButtonMobile {
-  background: transparent;
-  border: 1px solid var(--text-on-dark-bg, #FFFFFF);
-  color: var(--text-on-dark-bg, #FFFFFF);
-  padding: 0.75rem 1.5rem;
-  border-radius: 4px;
+  justify-content: center;
+  background: var(--accent-primary);
+  color: #fff;
   cursor: pointer;
-  font-size: 1rem;
-  font-weight: bold;
+  transition: transform 0.15s ease, filter 0.2s ease;
 }
 
-/* Class to hide elements on mobile */
-.desktopOnly {
-  display: flex; /* Or whatever its default is */
+.searchSubmitButton svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.searchSubmitButton:hover {
+  filter: brightness(1.05);
+  transform: translateY(-1px);
+}
+
+.themeToggleWrap {
+  display: none;
+}
+
+.desktopAuthAction {
+  display: none;
+}
+
+.primaryButton,
+.secondaryButton,
+.compactAccountButton {
+  height: 40px;
+  padding: 0 0.95rem;
+  border-radius: 10px;
+  font-size: 0.92rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  text-decoration: none;
+  display: inline-flex;
   align-items: center;
-}
-
-/* Media query for mobile */
-@media (max-width: 768px) {
-  .desktopOnly {
-    display: none; /* Hide desktop-only elements */
-  }
-  
-  .mobileMenuButton {
-    display: flex; /* Show the hamburger button */
-  }
-}
-
-.logoutButton {
-  padding: 0.6rem 1rem; /* Match search button padding */
-  background-color: var(--button-secondary-bg);
-  color: var(--button-secondary-text);
-  border: 1px solid var(--button-secondary-bg);
-  border-radius: 4px; /* Standard button rounding */
-  cursor: pointer;
-  font-size: 0.9rem;   /* Match search button font size */
-  line-height: 1.2;    /* Match search button line height */
+  justify-content: center;
   white-space: nowrap;
-  /* margin-left: 0.75rem; */ /* Gap on parent handles this now */
-  transition: background-color 0.3s ease, border-color 0.3s ease;
-}
-.logoutButton:hover {
-  background-color: var(--button-secondary-hover-bg);
-  border-color: var(--button-secondary-hover-bg);
 }
 
-/* General button style (can be used for Login button too if desired) */
-.buttonStyle {
-  padding: 0.6rem 1rem;
-  background-color: var(--button-primary-bg);
-  color: var(--button-primary-text);
-  border: 1px solid var(--button-primary-bg);
-  border-radius: 4px;
-  text-decoration: none; /* For Link components styled as buttons */
-  font-size: 0.9rem;
-  line-height: 1.2;
-  white-space: nowrap;
-  transition: background-color 0.3s ease, border-color 0.3s ease;
-}
-.buttonStyle:hover {
-  background-color: var(--button-primary-hover-bg);
-  border-color: var(--button-primary-hover-bg);
-  text-decoration: none; /* For Link components styled as buttons */
+.primaryButton {
+  color: #fff;
+  border: 1px solid var(--button-primary-border);
+  background: var(--button-primary-bg);
 }
 
-/* Remove green hover from header icon buttons */
-.sidebarToggleButton,
-.sidebarToggleButton:hover,
-.sidebarToggleButton:focus,
-.sidebarToggleButton:active,
-.mobileMenuButton,
-.mobileMenuButton:hover,
-.mobileMenuButton:focus,
-.mobileMenuButton:active {
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
+.primaryButton:hover {
+  color: #fff;
+  border-color: var(--button-primary-border-hover);
+  background: var(--button-primary-hover-bg);
+  text-decoration: none;
+}
+
+.secondaryButton,
+.compactAccountButton {
+  color: var(--text-secondary);
+  border: 1px solid var(--border-primary);
+  background: var(--background-secondary);
+}
+
+.secondaryButton:hover,
+.compactAccountButton:hover {
+  color: var(--text-primary);
+  border-color: var(--border-accent);
+  background: var(--background-accent);
+  text-decoration: none;
+}
+
+.mobileSearchToggle {
+  display: inline-flex;
+}
+
+.mobileSearchPanel {
+  max-height: 0;
+  overflow: hidden;
+  border-bottom: 1px solid transparent;
+  background: color-mix(in oklab, var(--background-secondary) 95%, transparent);
+  transition: max-height 0.25s ease, border-color 0.25s ease;
+}
+
+.mobileSearchPanelOpen {
+  max-height: 76px;
+  border-color: var(--border-primary);
+}
+
+.mobileSearchForm {
+  position: relative;
+  width: 100%;
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 0.8rem 1.1rem;
+}
+
+@media (min-width: 760px) {
+  .compactAccountButton {
+    display: none;
+  }
+
+  .desktopAuthAction {
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .header {
+    height: 84px;
+    padding: 0 1.55rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .desktopSearchForm {
+    display: block;
+  }
+
+  .mobileSearchToggle,
+  .mobileSearchPanel {
+    display: none;
+  }
+
+  .themeToggleWrap {
+    display: inline-flex;
+  }
+
+  .headerRight {
+    gap: 0.7rem;
+  }
 }

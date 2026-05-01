@@ -25,6 +25,15 @@ function timeAgo(dateString: string) {
   return "Just now";
 }
 
+function formatEditorialDate(date: Date) {
+  return new Intl.DateTimeFormat('en-GB', {
+    weekday: 'long',
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+  }).format(date).toUpperCase();
+}
+
 async function getArticlesAndUser() {
   const supabase = createSupabaseServerComponentClient();
   const [articlesResponse, userResponse] = await Promise.all([
@@ -106,6 +115,13 @@ export default async function HomePage() {
   const heroArticle = articles[0];
   const trendingArticles = articles.slice(1, 4);
   const feedArticles = articles.slice(4);
+  const isSparseFeed = feedArticles.length <= 3;
+  const headlineTickerArticles = articles.slice(0, 3);
+  const editorialCategories = [
+    'All',
+    ...Array.from(new Set(articles.map((article) => article.category).filter(Boolean))),
+  ];
+  const todayLabel = formatEditorialDate(new Date());
 
   // Stagger classes for animations
   const staggerClasses = ['', styles.stagger1, styles.stagger2, styles.stagger3, styles.stagger4, styles.stagger5, styles.stagger6];
@@ -127,6 +143,62 @@ export default async function HomePage() {
           </Link>
         </header>
 
+        <section className={styles.editorialRail} aria-label="Editorial Navigation">
+          <div className={styles.editorialTopRow}>
+            <p className={styles.editorialDate}>{todayLabel}</p>
+            <div className={styles.editorialActions}>
+              <Link href="/login" className={styles.editorialSecondaryAction}>
+                Sign In
+              </Link>
+              <Link href="/submit" className={styles.editorialPrimaryAction}>
+                Publish
+              </Link>
+            </div>
+          </div>
+
+          <nav className={styles.categoryRail} aria-label="News Categories">
+            {editorialCategories.map((category) => {
+              if (category === 'All') {
+                return (
+                  <Link
+                    key={category}
+                    href="/"
+                    className={`${styles.categoryChip} ${styles.categoryChipActive}`}
+                    aria-current="page"
+                  >
+                    {category}
+                  </Link>
+                );
+              }
+
+              return (
+                <Link
+                  key={category}
+                  href={`/category/${encodeURIComponent(category)}`}
+                  className={styles.categoryChip}
+                >
+                  {category}
+                </Link>
+              );
+            })}
+          </nav>
+
+          <div className={styles.headlineTicker}>
+            {headlineTickerArticles.map((article) => (
+              <Link key={article.id} href={`/article/${article.slug}`} className={styles.tickerItem}>
+                <p className={styles.tickerCategory}>{article.category || 'General'}</p>
+                <h3 className={styles.editorialHeadline}>{article.headline}</h3>
+                <div className={styles.tickerMeta}>
+                  <span>{article.author_full_name}</span>
+                  <span aria-hidden>•</span>
+                  <span>{timeAgo(article.created_at)}</span>
+                  <span className={styles.verifiedTag}>AI Verified</span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+
         {/* BENTO GRID LAYOUT */}
         {articles.length > 0 ? (
           <div className={styles.bentoGrid}>
@@ -147,7 +219,7 @@ export default async function HomePage() {
                     <div className="inline-block px-3 py-1 mb-4 text-xs font-bold text-white rounded-full uppercase tracking-wide" style={{ backgroundColor: 'var(--accent-primary)' }}>
                         Featured Story
                     </div>
-                    <h2 className="text-3xl md:text-5xl font-black text-white mb-4 leading-tight drop-shadow-lg">
+                    <h2 className={`text-3xl md:text-5xl font-black text-white mb-4 leading-tight drop-shadow-lg ${styles.heroEditorialHeadline}`}>
                         {heroArticle.headline}
                     </h2>
                     <p className="text-slate-300 text-lg line-clamp-2 md:line-clamp-3 mb-6 max-w-2xl drop-shadow-md">
@@ -196,13 +268,20 @@ export default async function HomePage() {
 
             {/* 3. MAIN FEED */}
             {feedArticles.map((article, index) => {
-               const isLarge = index % 7 === 0; 
+               // Promote only content-rich cards to wide format to avoid awkward empty blocks.
+               const isLarge = Boolean(
+                 !isSparseFeed &&
+                 article.image_url &&
+                 article.excerpt &&
+                 article.excerpt.trim().length > 80 &&
+                 index % 9 === 0
+               );
                const staggerIndex = (index % 6) + 1;
                return (
                  <ArticleCard 
                     key={article.id} 
                     article={article} 
-                    className={isLarge ? styles.largeCard : ''}
+                    className={`${isLarge ? styles.largeCard : ''} ${isSparseFeed ? styles.singleColumnCard : ''}`}
                     animationClass={`${styles.animateCard} ${staggerClasses[staggerIndex]}`}
                     showImage={true}
                  />
